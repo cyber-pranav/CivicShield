@@ -3,16 +3,16 @@
  * Typed fetch wrapper for the FastAPI backend.
  */
 
-import type { AnalysisResult, InputType } from "../types/analysis";
+import type { AnalysisResult } from "../types/analysis";
 
 const API_BASE = "http://localhost:8000/api";
 
 export class ApiError extends Error {
-  constructor(
-    public status: number,
-    message: string
-  ) {
+  status: number;
+
+  constructor(status: number, message: string) {
     super(message);
+    this.status = status;
     this.name = "ApiError";
   }
 }
