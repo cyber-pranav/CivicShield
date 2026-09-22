@@ -1,0 +1,134 @@
+# CivicShield — URL Rules
+# Human-readable, auditable rule definitions for the URL Risk Engine.
+# Every list here is referenced by backend/engines/url_risk_engine.py
+# Maintainers: update these lists without touching Python code.
+#
+# IMPORTANT: This file does NOT perform any analysis itself.
+# It is loaded at startup and used by the rule engine.
+
+# ─────────────────────────────────────────────────────────────────────────────
+# 1. Official government domains for e-Challan / RTO / VAHAN services (India)
+#    Source: Government of India / NIC official portals (manually curated)
+#    Only .gov.in and .nic.in domains are considered official for GOI services.
+# ─────────────────────────────────────────────────────────────────────────────
+official_domains:
+  - echallan.parivahan.gov.in
+  - parivahan.gov.in
+  - vahan.parivahan.gov.in
+  - sarathi.parivahan.gov.in
+  - mparivahan.gov.in
+  - transport.gov.in
+  - morth.nic.in
+  - nic.in
+
+# ─────────────────────────────────────────────────────────────────────────────
+# 2. Known URL shortener / redirect services
+#    These are suspicious in government communication context because they
+#    hide the true destination URL.
+# ─────────────────────────────────────────────────────────────────────────────
+url_shorteners:
+  - bit.ly
+  - tinyurl.com
+  - t.co
+  - ow.ly
+  - is.gd
+  - buff.ly
+  - adf.ly
+  - goo.gl
+  - youtu.be
+  - rb.gy
+  - cutt.ly
+  - short.gy
+  - t.me
+  - wa.me
+  - rebrand.ly
+  - tiny.cc
+  - lnkd.in
+  - shorte.st
+  - bc.vc
+  - clk.sh
+
+# ─────────────────────────────────────────────────────────────────────────────
+# 3. Suspicious TLDs commonly used by phishing/fraud sites
+#    Legitimate Indian government portals use .gov.in or .nic.in ONLY.
+# ─────────────────────────────────────────────────────────────────────────────
+suspicious_tlds:
+  - ".xyz"
+  - ".tk"
+  - ".ml"
+  - ".ga"
+  - ".cf"
+  - ".gq"
+  - ".pw"
+  - ".top"
+  - ".click"
+  - ".loan"
+  - ".work"
+  - ".party"
+  - ".gdn"
+  - ".review"
+  - ".stream"
+  - ".download"
+  - ".accountant"
+  - ".win"
+  - ".trade"
+  - ".racing"
+  - ".date"
+  - ".faith"
+  - ".men"
+
+# ─────────────────────────────────────────────────────────────────────────────
+# 4. Brand impersonation keywords
+#    If these appear in the subdomain or domain (NOT in path of official site),
+#    it may indicate a lookalike/impersonation domain.
+#    e.g. echallan-parivahan.xyz — "echallan" appears but domain is not official.
+# ─────────────────────────────────────────────────────────────────────────────
+brand_impersonation_keywords:
+  - echallan
+  - e-challan
+  - parivahan
+  - mparivahan
+  - vahan
+  - sarathi
+  - rto
+  - traffic-police
+  - trafficpolice
+  - challan
+  - gov-india
+  - govindia
+  - india-gov
+  - indiangov
+  - morth
+
+# ─────────────────────────────────────────────────────────────────────────────
+# 5. Typosquat target domains
+#    The engine computes Levenshtein distance from these strings when checking
+#    the registered domain.  Short distance + non-official TLD = suspicious.
+# ─────────────────────────────────────────────────────────────────────────────
+typosquat_targets:
+  - parivahan
+  - echallan
+  - mparivahan
+  - sarathi
+  - vahan
+
+# ─────────────────────────────────────────────────────────────────────────────
+# 6. APK / application download path keywords
+#    Government services do NOT distribute APK files via challan payment URLs.
+# ─────────────────────────────────────────────────────────────────────────────
+apk_path_keywords:
+  - ".apk"
+  - "download-app"
+  - "install-app"
+  - "app-download"
+  - "challan-app"
+  - "rto-app"
+
+# ─────────────────────────────────────────────────────────────────────────────
+# 7. Thresholds used by the rule engine (do not change without re-validation)
+# ─────────────────────────────────────────────────────────────────────────────
+thresholds:
+  max_url_length_warning: 100        # URLs longer than this get a LOW flag
+  max_url_length_suspicious: 200     # URLs longer than this get a MEDIUM flag
+  max_domain_dots: 4                 # More dots in domain = more suspicious
+  typosquat_levenshtein_threshold: 3 # Distance <= this from a target = suspicious

@@ -1,0 +1,303 @@
+# CivicShield — Language Rules
+# Human-readable, auditable keyword/pattern definitions for the Scam Language Engine
+# and e-Challan Rule Engine.
+#
+# Structure:
+#   Each rule has:
+#     - id: unique identifier (used in evidence output)
+#     - category: which engine uses it
+#     - severity: HIGH | MEDIUM | LOW
+#     - patterns: list of case-insensitive substrings to search for
+#     - explanation: plain-English description of why this is suspicious
+#
+# IMPORTANT: Patterns are matched as case-insensitive substrings.
+# More specific patterns should be listed before generic ones for clarity.
+
+# ─────────────────────────────────────────────────────────────────────────────
+# SECTION A: e-Challan / RTO Impersonation Language
+# ─────────────────────────────────────────────────────────────────────────────
+challan_rules:
+
+  - id: CHALLAN_IMPERSONATION
+    category: challan
+    severity: MEDIUM
+    patterns:
+      - "e-challan"
+      - "echallan"
+      - "traffic challan"
+      - "motor vehicle challan"
+      - "rto notice"
+      - "traffic fine"
+      - "traffic violation"
+      - "vehicle challan"
+      - "parivahan"
+      - "mparivahan"
+      - "vahan"
+      - "sarathi"
+    explanation: >
+      Message uses e-Challan / RTO / government vehicle service terminology.
+      This alone is not suspicious — genuine challans use these terms —
+      but combined with other signals it increases risk.
+
+  - id: APK_DOWNLOAD_REQUEST
+    category: challan
+    severity: HIGH
+    patterns:
+      - ".apk"
+      - "download the app"
+      - "download app"
+      - "install the application"
+      - "install app"
+      - "download application"
+      - "click to install"
+      - "apk download"
+    explanation: >
+      Message requests downloading or installing an APK (Android application package).
+      The official Government of India e-Challan service does NOT distribute APK files
+      via SMS/WhatsApp. This is a strong indicator of fraud.
+
+  - id: OTP_CREDENTIAL_REQUEST
+    category: challan
+    severity: HIGH
+    patterns:
+      - "enter otp"
+      - "share otp"
+      - "send otp"
+      - "provide otp"
+      - "your otp"
+      - "verification code"
+      - "share your password"
+      - "enter your password"
+      - "login credentials"
+      - "account password"
+      - "aadhaar otp"
+      - "aadhaar number"
+    explanation: >
+      Message requests OTP, password, or authentication credentials.
+      Legitimate government e-Challan services never ask for OTP or passwords
+      via SMS or WhatsApp message. This is a HIGH-severity fraud indicator.
+
+  - id: UPI_PAYMENT_REQUEST
+    category: challan
+    severity: HIGH
+    patterns:
+      - "@okaxis"
+      - "@okhdfcbank"
+      - "@okicici"
+      - "@oksbi"
+      - "@ybl"
+      - "@ibl"
+      - "@axl"
+      - "@paytm"
+      - "@apl"
+      - "upi id"
+      - "upi payment"
+      - "pay via upi"
+      - "google pay"
+      - "gpay"
+      - "phonepe"
+      - "paytm payment"
+      - "scan qr"
+      - "scan and pay"
+    explanation: >
+      Message contains a UPI payment request or UPI Virtual Payment Address (VPA).
+      While genuine challans can be paid via UPI through the official portal,
+      a direct UPI ID in an SMS/WhatsApp message bypasses the official portal
+      and is a strong fraud indicator.
+
+  - id: ARREST_THREAT
+    category: challan
+    severity: HIGH
+    patterns:
+      - "arrest"
+      - "arrested"
+      - "fir will be filed"
+      - "fir filed"
+      - "legal action"
+      - "court case"
+      - "seized"
+      - "seizure"
+      - "warrant"
+      - "non-bailable"
+      - "criminal case"
+      - "police action"
+      - "imprisonment"
+    explanation: >
+      Message threatens arrest, FIR, court cases, or criminal action for non-payment.
+      While genuine challans can result in legal consequences if unpaid, legitimate
+      government notices do not threaten immediate arrest via SMS/WhatsApp.
+
+  - id: LICENSE_SUSPENSION_THREAT
+    category: challan
+    severity: HIGH
+    patterns:
+      - "license will be suspended"
+      - "licence will be suspended"
+      - "license suspended"
+      - "licence suspended"
+      - "rc will be cancelled"
+      - "registration cancelled"
+      - "vehicle will be seized"
+      - "vehicle seized"
+      - "blacklisted"
+    explanation: >
+      Message threatens immediate license suspension or vehicle seizure.
+      Legitimate suspension/cancellation proceedings follow a legal process
+      with proper notices — not via SMS.
+
+  - id: URGENT_PAYMENT_DEADLINE
+    category: challan
+    severity: MEDIUM
+    patterns:
+      - "pay within 24 hours"
+      - "pay within 48 hours"
+      - "pay immediately"
+      - "pay now to avoid"
+      - "last date"
+      - "final notice"
+      - "immediate payment"
+      - "urgent payment"
+      - "payment overdue"
+      - "deadline"
+      - "due date expired"
+      - "pay before"
+    explanation: >
+      Message creates artificial urgency around payment deadlines.
+      Scammers use urgency to pressure victims into paying without verification.
+      Official challan notices provide reasonable payment timelines.
+
+  - id: INCREASED_PENALTY_THREAT
+    category: challan
+    severity: MEDIUM
+    patterns:
+      - "penalty will increase"
+      - "fine will double"
+      - "additional penalty"
+      - "penalty doubled"
+      - "interest on fine"
+      - "late fee"
+      - "default penalty"
+    explanation: >
+      Message threatens escalating financial penalties to pressure immediate payment.
+
+# ─────────────────────────────────────────────────────────────────────────────
+# SECTION B: General Scam Language Signals
+# ─────────────────────────────────────────────────────────────────────────────
+scam_rules:
+
+  - id: SECRECY_INSTRUCTION
+    category: scam
+    severity: HIGH
+    patterns:
+      - "do not share this"
+      - "don't tell anyone"
+      - "keep this confidential"
+      - "do not inform anyone"
+      - "secret code"
+      - "confidential notice"
+    explanation: >
+      Message instructs the recipient to keep information secret.
+      Legitimate government communications are never confidential in this way.
+      Scammers use secrecy to prevent victims from seeking advice.
+
+  - id: PRIZE_REWARD_CLAIM
+    category: scam
+    severity: HIGH
+    patterns:
+      - "you have won"
+      - "congratulations"
+      - "lucky winner"
+      - "selected for reward"
+      - "cash prize"
+      - "lottery"
+      - "you are selected"
+    explanation: >
+      Message claims the recipient has won a prize or reward.
+      This pattern is unrelated to e-Challans and indicates a scam.
+
+  - id: ACCOUNT_SUSPENSION_THREAT
+    category: scam
+    severity: MEDIUM
+    patterns:
+      - "account will be blocked"
+      - "account suspended"
+      - "account deactivated"
+      - "services suspended"
+      - "access blocked"
+    explanation: >
+      Message threatens account suspension. Scammers use account threats
+      to create panic and push victims to act without thinking.
+
+  - id: SUSPICIOUS_CALL_TO_ACTION
+    category: scam
+    severity: MEDIUM
+    patterns:
+      - "click the link below"
+      - "click here immediately"
+      - "verify immediately"
+      - "update your details"
+      - "confirm your details"
+      - "fill in your details"
+    explanation: >
+      Message contains generic credential-harvesting call-to-action phrases.
+
+  - id: URGENCY_LANGUAGE
+    category: scam
+    severity: LOW
+    patterns:
+      - "act now"
+      - "respond immediately"
+      - "do not delay"
+      - "urgent"
+      - "immediate action required"
+      - "last chance"
+      - "expires today"
+      - "today only"
+    explanation: >
+      Message uses urgency-inducing language. On its own this is a LOW signal,
+      but combined with other indicators it increases overall risk.
+
+# ─────────────────────────────────────────────────────────────────────────────
+# SECTION C: Reassurance / Genuine Signals (reduce suspicion score)
+# ─────────────────────────────────────────────────────────────────────────────
+genuine_signals:
+
+  - id: OFFICIAL_PORTAL_REFERENCE
+    category: genuine
+    severity: INFO
+    patterns:
+      - "echallan.parivahan.gov.in"
+      - "parivahan.gov.in"
+      - "vahan.parivahan.gov.in"
+    explanation: >
+      Message references an official Government of India portal URL.
+      This is a positive signal, though forged messages can also include
+      official portal names in text.
+
+  - id: CHALLAN_NUMBER_FORMAT
+    category: genuine
+    severity: INFO
+    patterns:
+      - "challan no"
+      - "challan number"
+      - "challan id"
+      - "offence code"
+    explanation: >
+      Message references a specific challan number or offence code.
+      Genuine challans include a traceable reference number that can be
+      verified at echallan.parivahan.gov.in.
+
+# ─────────────────────────────────────────────────────────────────────────────
+# Verdict thresholds (configurable)
+# ─────────────────────────────────────────────────────────────────────────────
+verdict_thresholds:
+  # Minimum HIGH-severity findings to declare Likely Fraudulent
+  fraudulent_high_count: 2
+  # Minimum MEDIUM-severity findings (with no HIGH) to declare Likely Fraudulent
+  fraudulent_medium_count: 4
+  # Minimum MEDIUM-severity findings to upgrade to Likely Fraudulent when 1 HIGH present
+  fraudulent_mixed_medium_with_high: 2
+  # Must find at least one official domain reference to consider Likely Genuine
+  genuine_requires_official_domain: true
+  # Must have zero HIGH-severity findings to consider Likely Genuine
+  genuine_requires_zero_high: true
