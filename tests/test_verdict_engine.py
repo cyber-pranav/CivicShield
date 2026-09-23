@@ -1,9 +1,8 @@
 """
 CivicShield — Verdict Engine Unit Tests
 
-Tests the verdict logic under different evidence configurations.
-
-Run with: python -m pytest tests/test_verdict_engine.py -v
+Strict test suite for deterministic verdict precedence, exact risk levels,
+and zero double-counting of URL risk.
 """
 
 import sys
@@ -47,10 +46,11 @@ def _make_url_analysis(risk_level: str, is_official: bool = False) -> UrlAnalysi
 
 
 # ─────────────────────────────────────────────────────────────────────────────
-# Likely Fraudulent
+# Precedence Tests: Exact assertions
 # ─────────────────────────────────────────────────────────────────────────────
 
 def test_two_high_signals_is_fraudulent():
+    """CASE 7: Two HIGH signals -> Likely Fraudulent, HIGH."""
     evidence = _make_evidence("HIGH", 2)
     verdict, risk, reasoning, actions = compute_verdict(
         evidence=evidence, url_analyses=[], high_count=2, medium_count=0, low_count=0,
@@ -61,25 +61,35 @@ def test_two_high_signals_is_fraudulent():
 
 
 def test_one_high_two_medium_is_fraudulent():
+    """CASE 8: One HIGH + mixed MEDIUM threshold (>= 2) -> Likely Fraudulent, HIGH."""
     evidence = _make_evidence("HIGH", 1) + _make_evidence("MEDIUM", 2)
     verdict, risk, reasoning, actions = compute_verdict(
         evidence=evidence, url_analyses=[], high_count=1, medium_count=2, low_count=0,
         input_type="text"
     )
     assert verdict == "Likely Fraudulent"
+    assert risk == "HIGH"
 
 
 def test_four_medium_signals_is_fraudulent():
+    """CASE 9: Four MEDIUM signals and zero HIGH -> Likely Fraudulent, MEDIUM."""
     evidence = _make_evidence("MEDIUM", 4)
     verdict, risk, reasoning, actions = compute_verdict(
         evidence=evidence, url_analyses=[], high_count=0, medium_count=4, low_count=0,
         input_type="text"
     )
     assert verdict == "Likely Fraudulent"
+    assert risk == "MEDIUM"
 
 
-def test_high_risk_url_contributes_to_fraudulent():
-    """A HIGH-risk URL analysis should push verdict toward Fraudulent."""
+def test_url_risk_not_double_counted_regression():
+    """
+    P0 Regression Test:
+    If one URL produces exactly one HIGH evidence item and its URL risk_level is HIGH,
+    the verdict engine must see exactly ONE HIGH signal, not two.
+    With one HIGH signal and zero MEDIUM, the verdict must be 'Unable to Verify',
+    NEVER 'Likely Fraudulent'.
+    """
     evidence = _make_evidence("HIGH", 1)
     url_analyses = [_make_url_analysis("HIGH")]
     verdict, risk, reasoning, actions = compute_verdict(
@@ -87,15 +97,12 @@ def test_high_risk_url_contributes_to_fraudulent():
         high_count=1, medium_count=0, low_count=0,
         input_type="url"
     )
-    assert verdict == "Likely Fraudulent"
+    assert verdict == "Unable to Verify"
+    assert risk == "MEDIUM"
 
-
-# ─────────────────────────────────────────────────────────────────────────────
-# Likely Genuine
-# ─────────────────────────────────────────────────────────────────────────────
 
 def test_official_domain_no_signals_is_genuine():
-    """Official domain + zero suspicious signals => Likely Genuine."""
+    """CASE 1: Official domain + zero suspicious signals => Likely Genuine, LOW."""
     info_evidence = _make_evidence("INFO", 1, evidence_type="GENUINE_SIGNAL")
     url_analyses = [_make_url_analysis("LOW", is_official=True)]
     verdict, risk, reasoning, actions = compute_verdict(
@@ -107,32 +114,69 @@ def test_official_domain_no_signals_is_genuine():
     assert risk == "LOW"
 
 
+def test_official_domain_one_medium_is_genuine():
+    """Official domain + 1 MEDIUM signal => Likely Genuine with explanation."""
+    evidence = _make_evidence("MEDIUM", 1)
+    url_analyses = [_make_url_analysis("LOW", is_official=True)]
+    verdict, risk, reasoning, actions = compute_verdict(
+        evidence=evidence, url_analyses=url_analyses,
+        high_count=0, medium_count=1, low_count=0,
+        input_type="url"
+    )
+    assert verdict == "Likely Genuine"
+    assert risk == "LOW"
+    assert "advisory indicator" in reasoning.lower()
+
+
 def test_no_signals_no_urls_is_unable_to_verify():
-    """No content analysed => Unable to Verify (no official domain confirmed)."""
+    """CASE 10: No suspicious signals + no official domain => Unable to Verify, LOW."""
     verdict, risk, reasoning, actions = compute_verdict(
         evidence=[], url_analyses=[], high_count=0, medium_count=0, low_count=0,
         input_type="text"
     )
-    # With genuine_requires_official_domain=True and no official domain found
-    assert verdict in ("Likely Genuine", "Unable to Verify")
+    assert verdict == "Unable to Verify"
+    assert risk == "LOW"
 
-
-# ─────────────────────────────────────────────────────────────────────────────
-# Unable to Verify
-# ─────────────────────────────────────────────────────────────────────────────
 
 def test_one_high_no_medium_is_unable_to_verify():
-    """1 HIGH signal alone — below fraudulent threshold (2 needed) => Unable."""
+    """CASE 6: 1 HIGH signal alone => Unable to Verify, MEDIUM."""
     evidence = _make_evidence("HIGH", 1)
     verdict, risk, reasoning, actions = compute_verdict(
         evidence=evidence, url_analyses=[], high_count=1, medium_count=0, low_count=0,
         input_type="text"
     )
-    assert verdict in ("Unable to Verify", "Likely Fraudulent")
+    assert verdict == "Unable to Verify"
+    assert risk == "MEDIUM"
+
+
+def test_official_domain_with_high_evidence_never_genuine():
+    """CASE 11: Official domain + HIGH suspicious signal => NEVER Likely Genuine."""
+    evidence = _make_evidence("HIGH", 2)
+    url_analyses = [_make_url_analysis("LOW", is_official=True)]
+    verdict, risk, reasoning, actions = compute_verdict(
+        evidence=evidence, url_analyses=url_analyses,
+        high_count=2, medium_count=0, low_count=0,
+        input_type="text"
+    )
+    assert verdict == "Likely Fraudulent"
+    assert risk == "HIGH"
+
+
+def test_official_domain_with_one_high_unable_to_verify():
+    """Official domain + 1 HIGH signal => Unable to Verify, never Likely Genuine."""
+    evidence = _make_evidence("HIGH", 1)
+    url_analyses = [_make_url_analysis("LOW", is_official=True)]
+    verdict, risk, reasoning, actions = compute_verdict(
+        evidence=evidence, url_analyses=url_analyses,
+        high_count=1, medium_count=0, low_count=0,
+        input_type="text"
+    )
+    assert verdict == "Unable to Verify"
+    assert risk == "MEDIUM"
 
 
 # ─────────────────────────────────────────────────────────────────────────────
-# Recommended actions sanity check
+# Recommended Actions & Reasoning Quality
 # ─────────────────────────────────────────────────────────────────────────────
 
 def test_fraudulent_actions_include_do_not_click():
@@ -145,20 +189,16 @@ def test_fraudulent_actions_include_do_not_click():
 
 
 def test_all_verdicts_include_official_portal():
-    for n_high in [0, 1, 2]:
-        evidence = _make_evidence("HIGH", n_high)
+    for n_high, n_med in [(0, 0), (1, 0), (2, 0), (0, 4)]:
+        evidence = _make_evidence("HIGH", n_high) + _make_evidence("MEDIUM", n_med)
         verdict, risk, reasoning, actions = compute_verdict(
-            evidence=evidence, url_analyses=[], high_count=n_high, medium_count=0, low_count=0,
+            evidence=evidence, url_analyses=[], high_count=n_high, medium_count=n_med, low_count=0,
             input_type="text"
         )
         assert any("parivahan.gov.in" in a for a in actions), (
             f"Verdict '{verdict}' missing official portal in actions"
         )
 
-
-# ─────────────────────────────────────────────────────────────────────────────
-# Reasoning string quality
-# ─────────────────────────────────────────────────────────────────────────────
 
 def test_reasoning_is_non_empty():
     for n_high in [0, 1, 2, 3]:

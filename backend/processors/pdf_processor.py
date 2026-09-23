@@ -40,32 +40,47 @@ def extract_from_pdf(pdf_bytes: bytes) -> tuple[str, list[str]]:
             "PyMuPDF is not installed. Install with: pip install PyMuPDF"
         )
 
+    doc = None
     try:
         doc = fitz.open(stream=pdf_bytes, filetype="pdf")
     except Exception as exc:
         raise ValueError(f"Could not open PDF: {exc}") from exc
 
-    text_parts: list[str] = []
-    embedded_urls: list[str] = []
-    seen_urls: set[str] = set()
+    try:
+        if doc.is_encrypted:
+            # Try to authenticate with empty password (some PDFs are lightly encrypted without pwd)
+            if not doc.authenticate(""):
+                raise ValueError("PDF is encrypted/password protected and cannot be read.")
 
-    for page_num in range(len(doc)):
-        page = doc[page_num]
+        text_parts: list[str] = []
+        embedded_urls: list[str] = []
+        seen_urls: set[str] = set()
 
-        # Extract text
-        page_text = page.get_text("text")
-        if page_text.strip():
-            text_parts.append(page_text)
+        max_pages = min(len(doc), 50)
+        for page_num in range(max_pages):
+            page = doc[page_num]
 
-        # Extract link annotations (these may contain URLs not visible in text)
-        for link in page.get_links():
-            if link.get("kind") == fitz.LINK_URI:
-                uri = link.get("uri", "").strip()
-                if uri and uri not in seen_urls:
-                    seen_urls.add(uri)
-                    embedded_urls.append(uri)
+            # Extract text
+            page_text = page.get_text("text")
+            if page_text.strip():
+                text_parts.append(page_text)
 
-    doc.close()
+            # Extract link annotations (these may contain URLs not visible in text)
+            try:
+                for link in page.get_links():
+                    if link.get("kind") == fitz.LINK_URI:
+                        uri = link.get("uri", "").strip()
+                        if uri and uri not in seen_urls:
+                            seen_urls.add(uri)
+                            embedded_urls.append(uri)
+            except Exception:
+                pass  # Ignore malformed link dictionaries
+    finally:
+        if doc is not None:
+            doc.close()
 
     full_text = "\n\n--- Page Break ---\n\n".join(text_parts)
+    if len(full_text) > 50_000:
+        full_text = full_text[:50_000]
+
     return full_text.strip(), embedded_urls

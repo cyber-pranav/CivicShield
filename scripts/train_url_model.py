@@ -61,118 +61,12 @@ N_ESTIMATORS = 100
 # Feature computation (URL-structural only — mirrors url_risk_engine.py)
 # ─────────────────────────────────────────────────────────────────────────────
 
-import ipaddress
-import re
-from urllib.parse import urlparse
-
-try:
-    import tldextract
-    _TLDEXTRACT_OK = True
-except ImportError:
-    _TLDEXTRACT_OK = False
-    print("WARNING: tldextract not installed. Domain features will be limited.")
-
-try:
-    from Levenshtein import distance as levenshtein_distance
-    _LEV_OK = True
-except ImportError:
-    _LEV_OK = False
-    print("WARNING: python-levenshtein not installed. Typosquat feature skipped.")
-
-# Load rule lists from YAML
-_RULES_PATH = ROOT / "rules" / "url_rules.yaml"
-with open(_RULES_PATH, "r") as f:
-    _RULES = yaml.safe_load(f)
-
-_URL_SHORTENERS = set(_RULES.get("url_shorteners", []))
-_SUSPICIOUS_TLDS = set(_RULES.get("suspicious_tlds", []))
-_BRAND_KEYWORDS = _RULES.get("brand_impersonation_keywords", [])
-_APK_KEYWORDS = _RULES.get("apk_path_keywords", [])
-_OFFICIAL_DOMAINS = set(_RULES.get("official_domains", []))
-
-
-def _is_ip(hostname: str) -> bool:
-    try:
-        ipaddress.ip_address(hostname)
-        return True
-    except ValueError:
-        return False
+from backend.engines.url_features import extract_url_features, URL_FEATURE_COLUMNS
 
 
 def compute_url_features(url: str) -> dict:
-    """
-    Compute URL-structural features for a single URL.
-    Returns a dict with all feature values.
-    Any computation failure returns a 0/False default for that feature.
-    """
-    features = {
-        "url_length": 0,
-        "has_ip_host": 0,
-        "scheme_is_http": 0,
-        "is_url_shortener": 0,
-        "suspicious_tld": 0,
-        "num_dots_in_domain": 0,
-        "num_hyphens_in_domain": 0,
-        "has_at_symbol": 0,
-        "has_double_slash_path": 0,
-        "path_depth": 0,
-        "brand_keyword_in_domain": 0,
-        "apk_in_url": 0,
-    }
-
-    try:
-        url = str(url).strip()
-        if not url:
-            return features
-
-        features["url_length"] = len(url)
-
-        parsed = urlparse(url)
-        hostname = (parsed.hostname or "").lower()
-        path = parsed.path or ""
-        scheme = (parsed.scheme or "").lower()
-
-        if _TLDEXTRACT_OK:
-            ext = tldextract.extract(url)
-            subdomain = ext.subdomain
-            reg_domain = ext.domain
-            suffix = ext.suffix
-        else:
-            parts = hostname.split(".")
-            reg_domain = parts[-2] if len(parts) >= 2 else hostname
-            suffix = parts[-1] if parts else ""
-            subdomain = ".".join(parts[:-2]) if len(parts) > 2 else ""
-
-        full_domain = f"{reg_domain}.{suffix}".lower()
-        full_host = hostname
-
-        features["has_ip_host"] = int(_is_ip(hostname))
-        features["scheme_is_http"] = int(scheme == "http")
-        features["is_url_shortener"] = int(hostname in _URL_SHORTENERS)
-
-        tld_key = f".{suffix}".lower()
-        features["suspicious_tld"] = int(tld_key in _SUSPICIOUS_TLDS)
-        features["num_dots_in_domain"] = full_host.count(".")
-        features["num_hyphens_in_domain"] = full_domain.count("-")
-        features["has_at_symbol"] = int("@" in url)
-        features["has_double_slash_path"] = int("//" in path)
-        features["path_depth"] = len([p for p in path.split("/") if p])
-
-        # Brand keyword in non-official domain
-        brand_hit = any(
-            kw in full_host for kw in _BRAND_KEYWORDS
-            if full_domain not in _OFFICIAL_DOMAINS
-        )
-        features["brand_keyword_in_domain"] = int(brand_hit)
-
-        # APK in URL
-        url_lower = url.lower()
-        features["apk_in_url"] = int(any(kw in url_lower for kw in _APK_KEYWORDS))
-
-    except Exception as e:
-        pass  # Return defaults for any parsing failure
-
-    return features
+    """Wrapper around shared authoritative feature extractor."""
+    return extract_url_features(url)
 
 
 # ─────────────────────────────────────────────────────────────────────────────
@@ -240,15 +134,34 @@ def main():
             print(f"  Processing row {i}/{len(df)}...")
         feature_rows.append(compute_url_features(url))
 
-    X = pd.DataFrame(feature_rows)
+    X = pd.DataFrame(feature_rows)[URL_FEATURE_COLUMNS]
     print(f"\nFeature matrix shape: {X.shape}")
-    print(f"Features: {list(X.columns)}")
+    print(f"Features in exact order: {list(X.columns)}")
 
-    # ── Encode labels ─────────────────────────────────────────────────────────
-    y_raw = df[label_col].astype(str).str.lower()
-    # Normalise label: anything containing "phish" or "1" => 1, else 0
-    y = y_raw.apply(lambda x: 1 if ("phish" in x or x == "1") else 0)
-    print(f"\nEncoded label distribution:\n{y.value_counts()}")
+    # ── Encode labels strictly ────────────────────────────────────────────────
+    LEGITIMATE_LABELS = {"0", "legitimate", "benign", "safe", "ham", "good"}
+    PHISHING_LABELS = {"1", "phishing", "phish", "malicious", "bad", "fraud"}
+
+    def normalize_label(val) -> int:
+        s = str(val).strip().lower()
+        if s in LEGITIMATE_LABELS:
+            return 0
+        if s in PHISHING_LABELS:
+            return 1
+        raise ValueError(f"Unknown or ambiguous label encountered: '{val}'")
+
+    try:
+        y = df[label_col].apply(normalize_label)
+    except ValueError as exc:
+        print(f"\nFATAL ERROR during label normalization: {exc}")
+        print("Training aborted: unknown labels must not be silently classified.")
+        sys.exit(1)
+
+    print(f"\nNormalized class distribution:\n{y.value_counts()}")
+
+    if len(y.unique()) < 2:
+        print("\nFATAL ERROR: Training dataset does not contain both classes (0 and 1).")
+        sys.exit(1)
 
     # ── Train/test split ──────────────────────────────────────────────────────
     X_train, X_test, y_train, y_test = train_test_split(

@@ -12,21 +12,22 @@ import re
 from typing import Optional
 
 
-# RFC-3986-ish URL pattern — broad enough to catch obfuscated URLs in SMS text
+# RFC-3986 URL pattern restricted to http/https
 _URL_PATTERN = re.compile(
     r"""(?:
-        (?:https?|ftp)://                    # scheme
+        https?://                           # scheme
         (?:[^\s/$.?#].[^\s]*)               # authority + path
     )""",
     re.VERBOSE | re.IGNORECASE,
 )
 
-# Heuristic: bare domain references that look like gov.in portals
+# Heuristic: bare domain references for official government portals
 _BARE_DOMAIN_PATTERN = re.compile(
-    r"""(?<!\w)
-        (?:[a-zA-Z0-9](?:[a-zA-Z0-9\-]{0,61}[a-zA-Z0-9])?\.)+
-        (?:gov\.in|nic\.in|parivahan\.gov\.in)
-        (?:/[^\s]*)?
+    r"""(?<![\w@/.-])
+        (?:[a-zA-Z0-9](?:[a-zA-Z0-9\-]{0,61}[a-zA-Z0-9])?\.)*
+        (?:parivahan\.gov\.in|echallan\.parivahan\.gov\.in|transport\.gov\.in|morth\.nic\.in|nic\.in|gov\.in)
+        (?::\d+)?
+        (?:/[^\s<>'")\]]*)?
     """,
     re.VERBOSE | re.IGNORECASE,
 )
@@ -36,6 +37,8 @@ _LINK_LABEL_PATTERN = re.compile(
     r"(?:link|url|visit|click|open)\s*:\s*(https?://\S+)",
     re.IGNORECASE,
 )
+
+_TRAILING_PUNCTUATION = ".,;:)'\"!?]>"
 
 
 def extract_urls(text: str) -> list[str]:
@@ -53,7 +56,7 @@ def extract_urls(text: str) -> list[str]:
     results: list[str] = []
 
     def _add(url: str) -> None:
-        url = url.strip().rstrip(".,;:)")  # strip trailing punctuation
+        url = url.strip().rstrip(_TRAILING_PUNCTUATION)
         if url and url not in seen:
             seen.add(url)
             results.append(url)
@@ -64,11 +67,11 @@ def extract_urls(text: str) -> list[str]:
 
     # Match bare gov.in domains (add https:// scheme for downstream processing)
     for m in _BARE_DOMAIN_PATTERN.finditer(text):
-        bare = m.group(0).strip()
-        if bare not in seen:
-            # Only add if not already captured with scheme
+        bare = m.group(0).strip().rstrip(_TRAILING_PUNCTUATION)
+        if bare:
             full = f"https://{bare}"
-            _add(full)
+            if full not in seen and bare not in seen:
+                _add(full)
 
     # Match link labels
     for m in _LINK_LABEL_PATTERN.finditer(text):

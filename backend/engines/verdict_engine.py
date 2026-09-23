@@ -52,85 +52,90 @@ def compute_verdict(
         (verdict, risk_level, reasoning, recommended_actions)
     """
 
-    # Collect per-URL risk signals
-    url_high_risk = [u for u in url_analyses if u.risk_level == "HIGH"]
-    url_medium_risk = [u for u in url_analyses if u.risk_level == "MEDIUM"]
+    # Official domain presence check:
+    # For URL input: at least one analyzed URL must be confirmed official.
+    # For text/image/PDF: an official URL must actually be extracted and confirmed by URL analysis.
     has_official_url = any(
-        e.evidence_type == "DOMAIN_CHECK" and "official government whitelist" in e.explanation
-        for e in evidence
-    )
-    has_official_url = has_official_url or any(
         u.features.get("is_official_domain", False) for u in url_analyses
     )
 
-    # Aggregate URL risk into evidence counts
-    effective_high = high_count + len(url_high_risk)
-    effective_medium = medium_count + len(url_medium_risk)
-
-    # ─── Verdict logic ───────────────────────────────────────────────────────
-
+    # ─── Deterministic verdict precedence ─────────────────────────────────────
     verdict: str
     risk_level: str
     reasoning: str
 
-    # Path 1: Clearly fraudulent
-    if effective_high >= _FRAUD_HIGH_COUNT:
+    # Path A: FRAUDULENT HIGH (HIGH >= threshold)
+    if high_count >= _FRAUD_HIGH_COUNT:
         verdict = "Likely Fraudulent"
         risk_level = "HIGH"
         reasoning = (
-            f"Found {effective_high} HIGH-severity suspicious signal(s) "
+            f"Found {high_count} HIGH-severity suspicious signal(s) "
             f"(threshold: {_FRAUD_HIGH_COUNT}). "
             "Multiple independent red flags strongly indicate this is a fraudulent communication."
         )
 
-    elif effective_high == 1 and effective_medium >= _FRAUD_MIXED_MED:
+    # Path B: FRAUDULENT MIXED (HIGH == 1 and MEDIUM >= threshold)
+    elif high_count == 1 and medium_count >= _FRAUD_MIXED_MED:
         verdict = "Likely Fraudulent"
         risk_level = "HIGH"
         reasoning = (
-            f"Found 1 HIGH-severity signal and {effective_medium} MEDIUM-severity signals. "
-            "The combination of signals indicates a likely fraudulent communication."
+            f"Found 1 HIGH-severity signal and {medium_count} MEDIUM-severity signal(s) "
+            f"(threshold: {_FRAUD_MIXED_MED}). "
+            "The combination of suspicious signals indicates a likely fraudulent communication."
         )
 
-    elif effective_medium >= _FRAUD_MED_COUNT:
+    # Path C: FRAUDULENT MEDIUM (HIGH == 0 and MEDIUM >= threshold)
+    elif high_count == 0 and medium_count >= _FRAUD_MED_COUNT:
         verdict = "Likely Fraudulent"
         risk_level = "MEDIUM"
         reasoning = (
-            f"Found {effective_medium} MEDIUM-severity suspicious signals "
+            f"Found {medium_count} MEDIUM-severity suspicious signal(s) "
             f"(threshold: {_FRAUD_MED_COUNT}). "
             "Multiple warning signs indicate this communication warrants serious caution."
         )
 
-    # Path 2: Likely genuine
-    elif (
-        effective_high == 0
-        and effective_medium <= 1
-        and (has_official_url or not _GENUINE_REQ_OFFICIAL)
-    ):
+    # Path D: LIKELY GENUINE
+    # Strictly requires: HIGH == 0, MEDIUM <= 1, AND confirmed official domain.
+    # An official domain never overrides HIGH evidence (handled above).
+    elif high_count == 0 and medium_count <= 1 and has_official_url and _GENUINE_REQ_OFFICIAL:
         verdict = "Likely Genuine"
         risk_level = "LOW"
-        if has_official_url:
+        if medium_count == 1:
             reasoning = (
-                "No high-severity suspicious signals were found and the URL points to "
-                "an official Government of India domain. "
-                "This is consistent with a genuine e-Challan communication. "
-                "Always verify the challan number at echallan.parivahan.gov.in."
+                "The communication references a confirmed official Government of India domain "
+                "with no high-severity suspicious signals. One minor advisory indicator was noted "
+                "but does not invalidate the official domain origin. "
+                "Always verify the challan number directly at https://echallan.parivahan.gov.in/."
             )
         else:
             reasoning = (
-                "No significant suspicious signals were found. "
-                "However, no official government domain was confirmed. "
-                "Please verify independently at echallan.parivahan.gov.in."
+                "No high-severity or medium-severity suspicious signals were found, and the URL "
+                "points to an official Government of India domain. "
+                "This is consistent with a genuine e-Challan communication. "
+                "Always verify the challan number at https://echallan.parivahan.gov.in/."
             )
 
-    # Path 3: Unable to verify
+    # Path E: OTHERWISE -> UNABLE TO VERIFY
     else:
         verdict = "Unable to Verify"
-        risk_level = "MEDIUM" if (effective_high == 1 or effective_medium >= 2) else "LOW"
-        reasoning = (
-            f"Found {effective_high} HIGH and {effective_medium} MEDIUM-severity signals "
-            "— insufficient to classify as clearly fraudulent or clearly genuine. "
-            "Treat with caution and verify independently."
-        )
+        risk_level = "MEDIUM" if (high_count == 1 or medium_count >= 2) else "LOW"
+        if not has_official_url and high_count == 0 and medium_count == 0:
+            reasoning = (
+                "No suspicious signals were detected, but no official government domain could be confirmed. "
+                "CivicShield cannot certify authenticity without an official domain reference. "
+                "Please verify independently at https://echallan.parivahan.gov.in/."
+            )
+        elif has_official_url and high_count >= 1:
+            reasoning = (
+                f"Although an official domain was mentioned, {high_count} HIGH-severity suspicious signal(s) "
+                "were detected in the communication. The message cannot be considered genuine."
+            )
+        else:
+            reasoning = (
+                f"Found {high_count} HIGH and {medium_count} MEDIUM-severity signal(s) "
+                "— insufficient or conflicting evidence to classify as clearly fraudulent or clearly genuine. "
+                "Treat with caution and verify independently at https://echallan.parivahan.gov.in/."
+            )
 
     # ─── Recommended actions ─────────────────────────────────────────────────
     actions = _build_recommended_actions(verdict, evidence, url_analyses, has_official_url)

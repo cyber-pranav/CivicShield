@@ -49,10 +49,20 @@ def extract_text_from_image(image_bytes: bytes) -> str:
             "Also install Tesseract OCR from https://github.com/UB-Mannheim/tesseract/wiki"
         )
 
+    # Protection against decompression bombs (max 10 megapixels)
+    Image.MAX_IMAGE_PIXELS = 10_000_000
+
     try:
+        img_check = Image.open(io.BytesIO(image_bytes))
+        format_name = (img_check.format or "").upper()
+        if format_name not in ("JPEG", "PNG", "BMP", "TIFF", "WEBP"):
+            raise ValueError(f"Unsupported image format: '{format_name}'")
+        img_check.verify()
+
+        # Reopen image for processing after verify()
         img = Image.open(io.BytesIO(image_bytes))
     except Exception as exc:
-        raise ValueError(f"Could not open image: {exc}") from exc
+        raise ValueError(f"Could not open or verify image: {exc}") from exc
 
     # Convert to RGB if needed (handles RGBA, palette images, etc.)
     if img.mode not in ("RGB", "L"):

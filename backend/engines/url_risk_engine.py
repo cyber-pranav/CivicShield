@@ -51,6 +51,12 @@ except ImportError:
     _LEVENSHTEIN_AVAILABLE = False
 
 from backend.models.schemas import EvidenceItem, UrlAnalysisResult
+from backend.engines.url_features import (
+    URL_FEATURE_COLUMNS,
+    is_ip_address as _is_ip_address,
+    is_official_gov_domain,
+    extract_registered_domain as _extract_registered_domain,
+)
 
 # ─────────────────────────────────────────────────────────────────────────────
 # Load rules from YAML at module startup (fail fast if missing)
@@ -80,34 +86,8 @@ _IP_PATTERN = re.compile(
 
 
 # ─────────────────────────────────────────────────────────────────────────────
-# Feature extraction
+# Feature extraction helpers
 # ─────────────────────────────────────────────────────────────────────────────
-
-def _is_ip_address(hostname: str) -> bool:
-    """Return True if the hostname is a raw IPv4 or IPv6 address."""
-    try:
-        ipaddress.ip_address(hostname)
-        return True
-    except ValueError:
-        return False
-
-
-def _extract_registered_domain(url: str) -> tuple[str, str, str]:
-    """
-    Returns (subdomain, registered_domain, suffix).
-    Falls back to simple urlparse split if tldextract not available.
-    """
-    if _TLDEXTRACT_AVAILABLE:
-        ext = tldextract.extract(url)
-        return ext.subdomain, ext.domain, ext.suffix
-    # Fallback: naive split on "."
-    parsed = urlparse(url)
-    host = parsed.hostname or ""
-    parts = host.split(".")
-    if len(parts) >= 2:
-        return ".".join(parts[:-2]), parts[-2], parts[-1]
-    return "", host, ""
-
 
 def _min_typosquat_distance(domain: str) -> int:
     """
@@ -140,7 +120,7 @@ def analyze_url(url: str, ml_model=None) -> UrlAnalysisResult:
 
     # ── Parse URL ────────────────────────────────────────────────────────────
     parsed = urlparse(url)
-    hostname = (parsed.hostname or "").lower()
+    hostname = (parsed.hostname or "").lower().rstrip(".")
     path = parsed.path or ""
     scheme = (parsed.scheme or "").lower()
     full_url_lower = url.lower()
@@ -287,33 +267,8 @@ def analyze_url(url: str, ml_model=None) -> UrlAnalysisResult:
             source="url_risk_engine",
         ))
 
-    # 11. Brand keyword in non-official domain
-    features["brand_keyword_in_domain"] = False
-    found_keywords = []
-    for kw in _BRAND_KEYWORDS:
-        if kw in full_host_with_sub.lower() and full_domain not in _OFFICIAL_DOMAINS:
-            features["brand_keyword_in_domain"] = True
-            found_keywords.append(kw)
-
-    if features["brand_keyword_in_domain"] and not _is_ip_address(hostname):
-        evidence.append(EvidenceItem(
-            evidence_type="DOMAIN_CHECK",
-            finding=f"Non-official domain impersonates government brand: '{', '.join(found_keywords)}' in {full_host_with_sub}",
-            severity="HIGH",
-            explanation=(
-                f"The domain '{full_host_with_sub}' contains government service keywords "
-                f"({', '.join(found_keywords)}) but is NOT an official government domain. "
-                "This is a classic lookalike/impersonation technique."
-            ),
-            source="url_risk_engine",
-        ))
-
-    # 12. Official domain check
-    features["is_official_domain"] = (
-        full_domain in _OFFICIAL_DOMAINS
-        or hostname in _OFFICIAL_DOMAINS
-        or any(hostname.endswith("." + od) or hostname == od for od in _OFFICIAL_DOMAINS)
-    )
+    # 12. Official domain check (exact match or genuine subdomain of official domain)
+    features["is_official_domain"] = is_official_gov_domain(hostname)
     if features["is_official_domain"]:
         evidence.append(EvidenceItem(
             evidence_type="DOMAIN_CHECK",
@@ -322,6 +277,28 @@ def analyze_url(url: str, ml_model=None) -> UrlAnalysisResult:
             explanation=(
                 "The URL hostname is in the official government domain whitelist. "
                 "This is a positive signal, though the full URL path should still be checked."
+            ),
+            source="url_risk_engine",
+        ))
+
+    # 11. Brand keyword in non-official domain
+    features["brand_keyword_in_domain"] = False
+    found_keywords = []
+    if not features["is_official_domain"] and not _is_ip_address(hostname):
+        for kw in _BRAND_KEYWORDS:
+            if kw in full_host_with_sub.lower():
+                features["brand_keyword_in_domain"] = True
+                found_keywords.append(kw)
+
+    if features["brand_keyword_in_domain"]:
+        evidence.append(EvidenceItem(
+            evidence_type="DOMAIN_CHECK",
+            finding=f"Non-official domain impersonates government brand: '{', '.join(found_keywords)}' in {full_host_with_sub}",
+            severity="HIGH",
+            explanation=(
+                f"The domain '{full_host_with_sub}' contains government service keywords "
+                f"({', '.join(found_keywords)}) but is NOT an official government domain. "
+                "This is a classic lookalike/impersonation technique."
             ),
             source="url_risk_engine",
         ))

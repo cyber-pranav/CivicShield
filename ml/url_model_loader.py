@@ -17,24 +17,9 @@ from typing import Optional
 import joblib
 import numpy as np
 
-_MODEL_PATH = Path(__file__).resolve().parent.parent / "models" / "url_risk_model.joblib"
+from backend.engines.url_features import URL_FEATURE_COLUMNS
 
-# Feature order must match training order in scripts/train_url_model.py
-# IMPORTANT: If you add/remove features in the training script, update this list too.
-URL_FEATURE_COLUMNS = [
-    "url_length",
-    "has_ip_host",
-    "scheme_is_http",
-    "is_url_shortener",
-    "suspicious_tld",
-    "num_dots_in_domain",
-    "num_hyphens_in_domain",
-    "has_at_symbol",
-    "has_double_slash_path",
-    "path_depth",
-    "brand_keyword_in_domain",
-    "apk_in_url",
-]
+_MODEL_PATH = Path(__file__).resolve().parent.parent / "models" / "url_risk_model.joblib"
 
 
 def load_model():
