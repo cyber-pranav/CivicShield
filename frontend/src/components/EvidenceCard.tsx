@@ -6,6 +6,7 @@ interface Props {
 
 export function EvidenceCard({ item }: Props) {
   const isGenuine = item.evidence_type === "GENUINE_SIGNAL";
+  const isThreatIntel = item.evidence_type === "THREAT_INTEL";
   const displaySeverity = isGenuine ? "INFO" : item.severity;
 
   const icons: Record<string, string> = {
@@ -18,7 +19,7 @@ export function EvidenceCard({ item }: Props) {
   return (
     <div className={`evidence-card ${displaySeverity}`}>
       <span className={`evidence-severity ${displaySeverity}`}>
-        {displaySeverity}
+        {isThreatIntel ? "🛡️" : ""}{displaySeverity}
       </span>
       <div className="evidence-content">
         <div className="evidence-finding">
@@ -33,3 +34,4 @@ export function EvidenceCard({ item }: Props) {
     </div>
   );
 }
+

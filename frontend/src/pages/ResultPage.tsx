@@ -4,6 +4,7 @@ import { VerdictBanner } from "../components/VerdictBanner";
 import { EvidenceCard } from "../components/EvidenceCard";
 import { UrlRiskRow } from "../components/UrlRiskRow";
 import { LimitationDisclaimer } from "../components/LimitationDisclaimer";
+import { ThreatIntelPanel } from "../components/ThreatIntelPanel";
 
 interface Props {
   result: AnalysisResult;
@@ -14,23 +15,40 @@ export function ResultPage({ result, onReset }: Props) {
   const [showExtractedText, setShowExtractedText] = useState(false);
 
   const suspiciousEvidence = result.evidence.filter(
-    (e) => e.evidence_type !== "GENUINE_SIGNAL" && e.evidence_type !== "PROCESSING_NOTE"
+    (e) =>
+      e.evidence_type !== "GENUINE_SIGNAL" &&
+      e.evidence_type !== "PROCESSING_NOTE"
   );
   const genuineEvidence = result.evidence.filter(
     (e) => e.evidence_type === "GENUINE_SIGNAL"
   );
 
+  const isEnriched = result.analysis_mode === "ENRICHED";
+
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: 20 }}>
-      {/* Back button */}
+      {/* Back button + mode badge */}
       <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
         <button className="btn-outline" onClick={onReset} id="back-btn">
           ← New Analysis
         </button>
-        <span
-          style={{ fontSize: "0.8rem", color: "var(--text-muted)" }}
-        >
+        <span style={{ fontSize: "0.8rem", color: "var(--text-muted)" }}>
           Input type: {result.input_type_processed}
+        </span>
+        <span
+          style={{
+            fontSize: "0.7rem",
+            padding: "2px 8px",
+            borderRadius: 20,
+            background: isEnriched
+              ? "rgba(245,158,11,0.15)"
+              : "rgba(96,165,250,0.12)",
+            border: `1px solid ${isEnriched ? "rgba(245,158,11,0.35)" : "rgba(96,165,250,0.25)"}`,
+            color: isEnriched ? "#fbbf24" : "var(--accent-blue)",
+            fontWeight: 600,
+          }}
+        >
+          {isEnriched ? "🌐 ENRICHED" : "🔒 STATIC"}
         </span>
       </div>
 
@@ -39,6 +57,17 @@ export function ResultPage({ result, onReset }: Props) {
 
       {/* Disclaimer */}
       <LimitationDisclaimer />
+
+      {/* Threat intelligence panel (ENRICHED mode only) */}
+      {isEnriched && result.intel_results.length > 0 && (
+        <div>
+          <div className="section-header" style={{ marginBottom: 8 }}>
+            <span className="section-title">External Threat Intelligence</span>
+            <span className="section-count">{result.intel_results.length}</span>
+          </div>
+          <ThreatIntelPanel results={result.intel_results} />
+        </div>
+      )}
 
       {/* Recommended actions */}
       <div className="card">

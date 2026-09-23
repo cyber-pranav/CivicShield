@@ -1,9 +1,10 @@
 import { useState } from "react";
-import type { AnalysisResult, DemoCase } from "../types/analysis";
+import type { AnalysisResult, DemoCase, AnalysisMode } from "../types/analysis";
 import { analyzeText, analyzeFile, ApiError } from "../api/analyzeApi";
 import { InputPanel } from "../components/InputPanel";
 import { DemoSelector } from "../components/DemoSelector";
 import { LimitationDisclaimer } from "../components/LimitationDisclaimer";
+import { AnalysisModeSelector } from "../components/AnalysisModeSelector";
 import { ResultPage } from "./ResultPage";
 
 export function HomePage() {
@@ -11,13 +12,14 @@ export function HomePage() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [demoLabel, setDemoLabel] = useState<string | null>(null);
+  const [mode, setMode] = useState<AnalysisMode>("STATIC");
 
   const handleSubmitText = async (inputType: "url" | "text", content: string) => {
     setLoading(true);
     setError(null);
     setDemoLabel(null);
     try {
-      const res = await analyzeText(inputType, content);
+      const res = await analyzeText(inputType, content, mode);
       setResult(res);
     } catch (err) {
       if (err instanceof ApiError) {
@@ -35,7 +37,7 @@ export function HomePage() {
     setError(null);
     setDemoLabel(null);
     try {
-      const res = await analyzeFile(inputType, file);
+      const res = await analyzeFile(inputType, file, mode);
       setResult(res);
     } catch (err) {
       if (err instanceof ApiError) {
@@ -55,7 +57,8 @@ export function HomePage() {
     try {
       const res = await analyzeText(
         demo.inputType as "url" | "text",
-        demo.content
+        demo.content,
+        mode
       );
       setResult(res);
     } catch (err) {
@@ -135,33 +138,38 @@ export function HomePage() {
           alignItems: "start",
         }}
       >
-        {/* Left: input panel */}
-        <div className="card">
-          <div className="card-title">Submit for Analysis</div>
-          {error && (
-            <div
-              id="error-banner"
-              style={{
-                background: "var(--risk-high-bg)",
-                border: "1px solid var(--risk-high-border)",
-                borderRadius: 8,
-                padding: "10px 14px",
-                marginBottom: 16,
-                fontSize: "0.85rem",
-                color: "#fca5a5",
-              }}
-            >
-              ⚠️ {error}
-            </div>
-          )}
-          <InputPanel
-            onSubmitText={handleSubmitText}
-            onSubmitFile={handleSubmitFile}
-            loading={loading}
-          />
+        {/* Left: input panel + mode selector */}
+        <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
+          <div className="card">
+            <div className="card-title">Submit for Analysis</div>
+            {error && (
+              <div
+                id="error-banner"
+                style={{
+                  background: "var(--risk-high-bg)",
+                  border: "1px solid var(--risk-high-border)",
+                  borderRadius: 8,
+                  padding: "10px 14px",
+                  marginBottom: 16,
+                  fontSize: "0.85rem",
+                  color: "#fca5a5",
+                }}
+              >
+                ⚠️ {error}
+              </div>
+            )}
+            <InputPanel
+              onSubmitText={handleSubmitText}
+              onSubmitFile={handleSubmitFile}
+              loading={loading}
+            />
+          </div>
+
+          {/* Analysis mode selector — outside the input card so it's always visible */}
+          <AnalysisModeSelector mode={mode} onChange={setMode} />
         </div>
 
-        {/* Right: demo selector */}
+        {/* Right: demo selector + how it works + official link */}
         <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
           <DemoSelector onSelect={handleDemo} />
 
@@ -180,8 +188,10 @@ export function HomePage() {
                 "Submit URL, message, image or PDF",
                 "Text extracted (OCR for images)",
                 "URLs found and analysed structurally",
+                "IDN/homograph domain checks applied",
                 "e-Challan and scam rules applied",
                 "Evidence assembled, verdict computed",
+                "ENRICHED: external threat-intel checked",
                 "Every signal explained in plain language",
               ].map((step, i) => (
                 <li
@@ -228,7 +238,9 @@ export function HomePage() {
         >
           <div className="spinner" style={{ width: 36, height: 36, borderWidth: 3 }} />
           <div style={{ color: "var(--text-secondary)", fontSize: "0.9rem" }}>
-            Analysing — please wait…
+            {mode === "ENRICHED"
+              ? "Analysing + querying threat-intelligence databases…"
+              : "Analysing — please wait…"}
           </div>
         </div>
       )}

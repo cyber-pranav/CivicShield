@@ -58,6 +58,30 @@ from backend.engines.url_features import (
     extract_registered_domain as _extract_registered_domain,
 )
 
+# ── IDN / Unicode homograph helpers ──────────────────────────────────────────
+# Punycode-encoded ACE label prefix (RFC 3492)
+_ACE_PREFIX = "xn--"
+
+# Common Unicode confusable code-point ranges (non-ASCII look-alikes)
+# These ranges cover Cyrillic, Greek, and other scripts with Latin lookalikes.
+_CONFUSABLE_RANGES: list[tuple[int, int]] = [
+    (0x0400, 0x04FF),  # Cyrillic (а=\u0430 looks like a, е=\u0435 like e, etc.)
+    (0x0370, 0x03FF),  # Greek  (ο=\u03BF looks like o, etc.)
+    (0xFF00, 0xFFEF),  # Fullwidth Latin
+    (0x2000, 0x206F),  # General Punctuation (various space/dash look-alikes)
+]
+
+
+def _has_confusable_codepoints(text: str) -> bool:
+    """Return True if text contains Unicode codepoints in confusable ranges."""
+    for ch in text:
+        cp = ord(ch)
+        if cp > 127:  # non-ASCII
+            for lo, hi in _CONFUSABLE_RANGES:
+                if lo <= cp <= hi:
+                    return True
+    return False
+
 # ─────────────────────────────────────────────────────────────────────────────
 # Load rules from YAML at module startup (fail fast if missing)
 # ─────────────────────────────────────────────────────────────────────────────
@@ -333,6 +357,42 @@ def analyze_url(url: str, ml_model=None) -> UrlAnalysisResult:
                 "The URL path contains keywords suggesting an APK or app download. "
                 "The Government of India e-Challan service does NOT distribute APK files via URL. "
                 "Downloading this file could install malware."
+            ),
+            source="url_risk_engine",
+        ))
+
+    # 15. IDN / Unicode homograph detection
+    # Check the raw hostname (before urlparse normalisation strips encoding)
+    raw_hostname_lower = url.split("/")[2].lower() if url.count("/") >= 2 else hostname
+    has_punycode = _ACE_PREFIX in raw_hostname_lower
+    has_confusable = _has_confusable_codepoints(hostname)  # after IDNA decode
+
+    if has_punycode:
+        # Punycode labels are always suspicious in Indian govt domain context
+        evidence.append(EvidenceItem(
+            evidence_type="DOMAIN_CHECK",
+            finding=f"Domain uses Punycode/IDN encoding: {hostname}",
+            severity="HIGH",
+            explanation=(
+                "Punycode ('xn--') in a domain usually means the domain contains "
+                "non-ASCII Unicode characters that look like Latin letters. "
+                "This is a classic technique to impersonate trusted domains "
+                "(e.g., xn--parivahn-... to mimic parivahan.gov.in). "
+                "Official Indian government portals do not use IDN domains."
+            ),
+            source="url_risk_engine",
+        ))
+    elif has_confusable and not features["is_official_domain"]:
+        evidence.append(EvidenceItem(
+            evidence_type="DOMAIN_CHECK",
+            finding=f"Domain contains Unicode look-alike characters: {hostname}",
+            severity="HIGH",
+            explanation=(
+                "The domain contains non-ASCII characters from scripts "
+                "(e.g., Cyrillic, Greek) that visually resemble Latin letters. "
+                "This is a homograph attack: the domain looks identical to an "
+                "official site but is a different host. "
+                "Official Indian government portals use plain ASCII domains."
             ),
             source="url_risk_engine",
         ))

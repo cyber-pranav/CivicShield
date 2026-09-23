@@ -10,6 +10,11 @@ from __future__ import annotations
 from typing import Literal, Optional
 from pydantic import BaseModel, Field
 
+# Analysis modes:
+#   STATIC   — local rule-based and ML analysis only (no external network calls)
+#   ENRICHED — STATIC + external threat-intelligence lookups (URLs shared with 3rd parties)
+AnalysisMode = Literal["STATIC", "ENRICHED"]
+
 
 # ─────────────────────────────────────────────────────────────────────────────
 # Inbound request
@@ -32,6 +37,7 @@ class EvidenceItem(BaseModel):
         "LANGUAGE_SIGNAL",
         "GENUINE_SIGNAL",
         "PROCESSING_NOTE",
+        "THREAT_INTEL",    # External threat-intelligence hit (ENRICHED mode)
     ]
     finding: str          # Human-readable one-liner
     severity: Literal["HIGH", "MEDIUM", "LOW", "INFO"]
@@ -55,6 +61,24 @@ class UrlAnalysisResult(BaseModel):
 
 
 # ─────────────────────────────────────────────────────────────────────────────
+# Threat intelligence result (per provider, per URL) — ENRICHED mode only
+# ─────────────────────────────────────────────────────────────────────────────
+
+class ThreatIntelResultSchema(BaseModel):
+    """Serializable form of backend.intelligence.base.ThreatIntelResult."""
+    provider: str
+    url: str
+    found: bool = False
+    threat_type: Optional[str] = None
+    threat_url: Optional[str] = None
+    tags: list[str] = []
+    date_added: Optional[str] = None
+    url_status: str = "unknown"
+    error: Optional[str] = None
+    provider_available: bool = True
+
+
+# ─────────────────────────────────────────────────────────────────────────────
 # Overall analysis result
 # ─────────────────────────────────────────────────────────────────────────────
 
@@ -62,6 +86,9 @@ class AnalysisResult(BaseModel):
     # Top-level verdict
     verdict: Literal["Likely Genuine", "Likely Fraudulent", "Unable to Verify"]
     risk_level: Literal["HIGH", "MEDIUM", "LOW", "UNKNOWN"]
+
+    # Analysis mode used (STATIC | ENRICHED)
+    analysis_mode: AnalysisMode = "STATIC"
 
     # Evidence audit trail
     evidence: list[EvidenceItem]
@@ -72,6 +99,9 @@ class AnalysisResult(BaseModel):
 
     # Per-URL analysis
     url_analyses: list[UrlAnalysisResult] = []
+
+    # Threat intelligence results (ENRICHED mode only)
+    intel_results: list[ThreatIntelResultSchema] = []
 
     # Verdict reasoning (plain English)
     verdict_reasoning: str

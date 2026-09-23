@@ -3,7 +3,7 @@
  * Typed fetch wrapper for the FastAPI backend.
  */
 
-import type { AnalysisResult } from "../types/analysis";
+import type { AnalysisResult, AnalysisMode } from "../types/analysis";
 
 const API_BASE = "http://localhost:8000/api";
 
@@ -19,11 +19,13 @@ export class ApiError extends Error {
 
 export async function analyzeText(
   inputType: "url" | "text",
-  content: string
+  content: string,
+  mode: AnalysisMode = "STATIC"
 ): Promise<AnalysisResult> {
   const form = new FormData();
   form.append("input_type", inputType);
   form.append("content", content);
+  form.append("analysis_mode", mode);
 
   const response = await fetch(`${API_BASE}/analyze`, {
     method: "POST",
@@ -40,11 +42,13 @@ export async function analyzeText(
 
 export async function analyzeFile(
   inputType: "image" | "pdf",
-  file: File
+  file: File,
+  mode: AnalysisMode = "STATIC"
 ): Promise<AnalysisResult> {
   const form = new FormData();
   form.append("input_type", inputType);
   form.append("file", file, file.name);
+  form.append("analysis_mode", mode);
 
   const response = await fetch(`${API_BASE}/analyze`, {
     method: "POST",
@@ -59,7 +63,7 @@ export async function analyzeFile(
   return response.json() as Promise<AnalysisResult>;
 }
 
-export async function healthCheck(): Promise<{ status: string; ml_model_loaded: boolean }> {
+export async function healthCheck(): Promise<{ status: string; ml_model_loaded: boolean; intel_providers?: Record<string, boolean> }> {
   const response = await fetch(`${API_BASE}/health`);
   if (!response.ok) throw new ApiError(response.status, "Health check failed");
   return response.json();
