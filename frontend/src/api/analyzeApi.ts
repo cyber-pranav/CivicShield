@@ -5,11 +5,36 @@
 
 import type { AnalysisResult, AnalysisMode } from "../types/analysis";
 
-let rawBase = import.meta.env.VITE_API_BASE_URL || "http://localhost:8000/api";
-if (!rawBase.startsWith("http://") && !rawBase.startsWith("https://")) {
-  rawBase = `https://${rawBase}`;
+function getApiBaseUrl(): string {
+  // 1. Environment variable if provided at build time
+  const envUrl = import.meta.env.VITE_API_BASE_URL;
+  if (envUrl && typeof envUrl === "string" && envUrl.trim() !== "") {
+    let base = envUrl.trim();
+    if (!base.startsWith("http://") && !base.startsWith("https://")) {
+      base = `https://${base}`;
+    }
+    return base.endsWith("/api") ? base : `${base.replace(/\/$/, "")}/api`;
+  }
+
+  // 2. Runtime browser location detection for cloud hosts (e.g. Render, Vercel)
+  if (typeof window !== "undefined" && window.location) {
+    const host = window.location.hostname;
+    if (host !== "localhost" && host !== "127.0.0.1") {
+      // Auto-match Render blueprint naming (civicshield-frontend-xyz -> civicshield-backend-xyz)
+      if (host.includes("frontend")) {
+        const backendHost = host.replace("frontend", "backend");
+        return `https://${backendHost}/api`;
+      }
+      // If hosted on custom domain or single host, use origin/api
+      return `${window.location.origin}/api`;
+    }
+  }
+
+  // 3. Fallback for local development
+  return "http://localhost:8000/api";
 }
-const API_BASE = rawBase.endsWith("/api") ? rawBase : `${rawBase.replace(/\/$/, "")}/api`;
+
+const API_BASE = getApiBaseUrl();
 
 export class ApiError extends Error {
   status: number;
