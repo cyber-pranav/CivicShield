@@ -5,7 +5,10 @@
 
 import type { AnalysisResult, AnalysisMode } from "../types/analysis";
 
-const rawBase = import.meta.env.VITE_API_BASE_URL || "http://localhost:8000/api";
+let rawBase = import.meta.env.VITE_API_BASE_URL || "http://localhost:8000/api";
+if (!rawBase.startsWith("http://") && !rawBase.startsWith("https://")) {
+  rawBase = `https://${rawBase}`;
+}
 const API_BASE = rawBase.endsWith("/api") ? rawBase : `${rawBase.replace(/\/$/, "")}/api`;
 
 export class ApiError extends Error {

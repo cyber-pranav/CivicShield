@@ -25,7 +25,7 @@ export function HomePage() {
       if (err instanceof ApiError) {
         setError(`Analysis failed (${err.status}): ${err.message}`);
       } else {
-        setError("Could not connect to the backend. Is the server running on port 8000?");
+        setError("Could not connect to backend service. If using live deployment, the backend service may be starting up (takes ~30s on free tier). Please retry in a few seconds.");
       }
     } finally {
       setLoading(false);
@@ -43,7 +43,7 @@ export function HomePage() {
       if (err instanceof ApiError) {
         setError(`Analysis failed (${err.status}): ${err.message}`);
       } else {
-        setError("Could not connect to the backend. Is the server running on port 8000?");
+        setError("Could not connect to backend service. If using live deployment, the backend service may be starting up (takes ~30s on free tier). Please retry in a few seconds.");
       }
     } finally {
       setLoading(false);
@@ -65,7 +65,7 @@ export function HomePage() {
       if (err instanceof ApiError) {
         setError(`Demo failed (${err.status}): ${err.message}`);
       } else {
-        setError("Could not connect to the backend. Is the server running on port 8000?");
+        setError("Could not connect to backend service. If using live deployment, the backend service may be starting up (takes ~30s on free tier). Please retry in a few seconds.");
       }
     } finally {
       setLoading(false);
