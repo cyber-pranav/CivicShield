@@ -44,7 +44,17 @@ def detect_category(
     if has_official:
         return "government_notice"
 
-    # Priority 3: Only general scam signals
+    # Priority 3: Banking / Financial rules fired
+    banking_in_scam = any(
+        e.category == "banking_phishing" for e in scam_evidence
+    )
+    banking_in_url = any(
+        u.features.get("matched_category") == "banking_phishing" for u in url_analyses
+    )
+    if banking_in_scam or banking_in_url:
+        return "banking_phishing"
+
+    # Priority 4: Only general scam signals
     if scam_evidence:
         return "generic_phishing"
 

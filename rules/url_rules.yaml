@@ -123,6 +123,14 @@ brand_impersonation_keywords:
   # Cybercrime
   - cybercrime
   - cyber-crime
+  # Banking / Financial
+  - sbi
+  - yono
+  - hdfc
+  - icici
+  - axisbank
+  - pnb
+  - rbi
 
 # ─────────────────────────────────────────────────────────────────────────────
 # 5. Typosquat target domains
@@ -139,6 +147,12 @@ typosquat_targets:
   - digilocker
   - cybercrime
   - indiapost
+  # Banking targets
+  - sbi
+  - yono
+  - hdfcbank
+  - icicibank
+  - axisbank
 
 # ─────────────────────────────────────────────────────────────────────────────
 # 6. APK / application download path keywords

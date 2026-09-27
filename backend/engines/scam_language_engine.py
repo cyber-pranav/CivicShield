@@ -18,11 +18,13 @@ with open(_RULES_PATH, "r", encoding="utf-8") as _f:
     _LANG_RULES = yaml.safe_load(_f)
 
 _SCAM_RULES: list[dict] = _LANG_RULES.get("scam_rules", [])
+_BANKING_RULES: list[dict] = _LANG_RULES.get("banking_rules", [])
+_ALL_SCAM_RULES = _SCAM_RULES + _BANKING_RULES
 
 
 def analyze_scam_language(text: str) -> list[EvidenceItem]:
     """
-    Scan text for general scam/social-engineering language patterns.
+    Scan text for general scam/social-engineering and banking phishing language patterns.
 
     Returns a list of EvidenceItems, one per matched rule.
     Rules are collapsed — if a rule fires on multiple patterns in the
@@ -35,7 +37,7 @@ def analyze_scam_language(text: str) -> list[EvidenceItem]:
     evidence: list[EvidenceItem] = []
     seen_rule_ids: set[str] = set()
 
-    for rule in _SCAM_RULES:
+    for rule in _ALL_SCAM_RULES:
         rule_id: str = rule["id"]
         if rule_id in seen_rule_ids:
             continue
@@ -54,6 +56,7 @@ def analyze_scam_language(text: str) -> list[EvidenceItem]:
                 explanation=rule["explanation"].strip(),
                 source="scam_language_engine",
                 rule_id=rule_id,
+                category=rule.get("category"),
             ))
 
     # Add dynamic DB phrases
@@ -69,6 +72,7 @@ def analyze_scam_language(text: str) -> list[EvidenceItem]:
                     explanation=ind.get("description") or "Suspicious phrasing detected by dynamic rules.",
                     source="scam_language_engine",
                     rule_id="dynamic_db_phrase",
+                    category=ind.get("category"),
                 ))
     except Exception:
         pass
@@ -83,6 +87,8 @@ def _build_finding(rule_id: str, matched: list[str]) -> str:
         "ACCOUNT_SUSPENSION_THREAT": "Message threatens account/service suspension",
         "SUSPICIOUS_CALL_TO_ACTION": "Message uses credential-harvesting call-to-action",
         "URGENCY_LANGUAGE": "Message uses urgency-inducing language",
+        "ACCOUNT_BLOCKED_BANKING": "Message threatens banking account suspension or KYC blocks",
+        "FINANCIAL_REWARD_SCAM": "Message offers unsolicited financial rewards or credit limits",
     }
     base = labels.get(rule_id, f"Scam pattern '{rule_id}' detected")
     quoted = ", ".join(f'"{p}"' for p in matched)

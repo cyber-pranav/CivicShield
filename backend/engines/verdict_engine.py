@@ -193,31 +193,56 @@ def _build_recommended_actions(
 
     # Primary verification action — category-aware
     primary_url = official_urls[0] if official_urls else "the relevant official government website"
-    actions.append(
-        f"Verify any notice or reference details on the official government website (e.g. {primary_url}) "
-        "— you will need only the official reference number or registered details."
-    )
+    if category == "banking_phishing":
+        actions.append(
+            "Contact your bank directly using the official phone number on the back of your debit/credit card."
+        )
+    else:
+        actions.append(
+            f"Verify any notice or reference details on the official government website (e.g. {primary_url}) "
+            "— you will need only the official reference number or registered details."
+        )
 
     if verdict == "Likely Fraudulent":
-        actions += [
-            "Do NOT click any links in this message.",
-            "Do NOT download any files or APKs mentioned in this message.",
-            "Do NOT share any OTP, password, or personal details.",
-            "Do NOT make any payment through links in this message — use official government websites only.",
-            "Report this fraudulent message to the National Cyber Crime Reporting Portal: https://cybercrime.gov.in/",
-            "Forward suspicious messages to 1930 (National Cyber Crime Helpline).",
-        ]
+        if category == "banking_phishing":
+            actions += [
+                "Do NOT click any links in this message.",
+                "Never share your OTP, PIN, or CVV over SMS links.",
+                "Report this fraudulent message to your bank immediately.",
+                "Report this to the National Cyber Crime Reporting Portal: https://cybercrime.gov.in/",
+                "Forward suspicious messages to 1930 (National Cyber Crime Helpline)."
+            ]
+        else:
+            actions += [
+                "Do NOT click any links in this message.",
+                "Do NOT download any files or APKs mentioned in this message.",
+                "Do NOT share any OTP, password, or personal details.",
+                "Do NOT make any payment through links in this message — use official government websites only.",
+                "Report this fraudulent message to the National Cyber Crime Reporting Portal: https://cybercrime.gov.in/",
+                "Forward suspicious messages to 1930 (National Cyber Crime Helpline).",
+            ]
     elif verdict == "Likely Genuine":
-        actions += [
-            f"Cross-verify the notice details directly on the official government website (e.g. {primary_url}) before taking action or paying.",
-            "Pay only through official government websites — do not pay via UPI IDs sent in messages.",
-        ]
+        if category == "banking_phishing":
+             actions += [
+                 "If this is a legitimate bank notice, login to your official banking app or website independently to verify.",
+             ]
+        else:
+            actions += [
+                f"Cross-verify the notice details directly on the official government website (e.g. {primary_url}) before taking action or paying.",
+                "Pay only through official government websites — do not pay via UPI IDs sent in messages.",
+            ]
     else:  # Unable to Verify
-        actions += [
-            "Exercise caution — do not click links or pay until you have verified independently.",
-            f"Visit the official government website (e.g. {primary_url}) to check if this notice exists.",
-            "If uncertain, contact the relevant official department or authority in person.",
-        ]
+        if category == "banking_phishing":
+             actions += [
+                 "Exercise caution — do not click links or share details until you have verified independently.",
+                 "Call your bank's official customer care number to check if this notice is real.",
+             ]
+        else:
+            actions += [
+                "Exercise caution — do not click links or pay until you have verified independently.",
+                f"Visit the official government website (e.g. {primary_url}) to check if this notice exists.",
+                "If uncertain, contact the relevant official department or authority in person.",
+            ]
 
     # Context-specific additions
     has_apk_risk = any(

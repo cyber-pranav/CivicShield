@@ -258,7 +258,41 @@ scam_rules:
       but combined with other indicators it increases overall risk.
 
 # ─────────────────────────────────────────────────────────────────────────────
-# SECTION C: Reassurance / Genuine Signals (reduce suspicion score)
+# SECTION C: Banking / Financial Phishing Language
+# ─────────────────────────────────────────────────────────────────────────────
+banking_rules:
+  
+  - id: ACCOUNT_BLOCKED_BANKING
+    category: banking_phishing
+    severity: HIGH
+    patterns:
+      - "account blocked"
+      - "kyc suspended"
+      - "update pan immediately"
+      - "yono sbi block"
+      - "dear customer your a/c is blocked"
+      - "dear customer your a/c is suspended"
+      - "pan link"
+      - "update your kyc"
+    explanation: >
+      Message threatens banking account suspension or demands urgent KYC/PAN updates.
+      Banks never ask for KYC updates via blind SMS links.
+
+  - id: FINANCIAL_REWARD_SCAM
+    category: banking_phishing
+    severity: MEDIUM
+    patterns:
+      - "redeem reward points"
+      - "credit card limit increase"
+      - "loan pre-approved"
+      - "pre-approved loan"
+      - "reward points expiring"
+    explanation: >
+      Message offers unsolicited financial rewards or credit limit increases.
+      While legitimate marketing exists, scammers frequently use these hooks.
+
+# ─────────────────────────────────────────────────────────────────────────────
+# SECTION D: Reassurance / Genuine Signals (reduce suspicion score)
 # ─────────────────────────────────────────────────────────────────────────────
 genuine_signals:
 
@@ -302,8 +336,8 @@ category_definitions:
       Traffic violation notices, RTO communications, vehicle-related
       government notices, and other official government service messages.
 
-  banking:
-    label: "Banking / Financial Communication"
+  banking_phishing:
+    label: "Banking / Financial Phishing"
     official_urls:
       - "https://www.rbi.org.in/"
     description: >

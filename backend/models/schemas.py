@@ -44,6 +44,7 @@ class EvidenceItem(BaseModel):
     explanation: str      # Why this is flagged, for a non-technical reader
     source: str           # Which engine produced this
     rule_id: Optional[str] = None  # Rule ID from YAML (for audit trail)
+    category: Optional[str] = None # Category tag for detection (e.g. banking_phishing)
 
 
 # ─────────────────────────────────────────────────────────────────────────────

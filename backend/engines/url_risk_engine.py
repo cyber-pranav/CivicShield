@@ -396,6 +396,24 @@ def analyze_url(url: str, ml_model=None) -> UrlAnalysisResult:
             source="url_risk_engine",
         ))
 
+    # 16. Dynamic DB URL patterns
+    try:
+        from backend.engines.indicator_cache import get_merged_indicators
+        db_urls = get_merged_indicators("url_pattern")
+        for ind in db_urls:
+            if ind["value"].lower() in full_url_lower:
+                features["matched_category"] = ind.get("category")
+                evidence.append(EvidenceItem(
+                    evidence_type="URL_RISK",
+                    finding=f"URL matches known malicious pattern: {ind['value']}",
+                    severity=ind["severity"],
+                    explanation=ind.get("description") or "Matches a known malicious URL pattern.",
+                    source="url_risk_engine",
+                    category=ind.get("category"),
+                ))
+    except Exception:
+        pass
+
     # ── ML prediction (if model available) ───────────────────────────────────
     ml_prediction: Optional[str] = None
     ml_available = ml_model is not None
