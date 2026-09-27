@@ -7,11 +7,13 @@
 # It is loaded at startup and used by the rule engine.
 
 # ─────────────────────────────────────────────────────────────────────────────
-# 1. Official government domains for e-Challan / RTO / VAHAN services (India)
+# 1. Official government domains (India)
 #    Source: Government of India / NIC official portals (manually curated)
-#    Only .gov.in and .nic.in domains are considered official for GOI services.
+#    Only .gov.in, .nic.in, and verified .org.in/.sbi domains are considered
+#    official for GOI / regulated financial services.
 # ─────────────────────────────────────────────────────────────────────────────
 official_domains:
+  # Traffic / Transport (core use case)
   - echallan.parivahan.gov.in
   - parivahan.gov.in
   - vahan.parivahan.gov.in
@@ -20,6 +22,19 @@ official_domains:
   - transport.gov.in
   - morth.nic.in
   - nic.in
+  # General Government
+  - india.gov.in
+  - services.india.gov.in
+  - digitalindia.gov.in
+  - digilocker.gov.in
+  - uidai.gov.in
+  # Cybercrime Reporting
+  - cybercrime.gov.in
+  # Postal
+  - indiapost.gov.in
+  # Financial / Banking (regulated)
+  - rbi.org.in
+  - onlinesbi.sbi
 
 # ─────────────────────────────────────────────────────────────────────────────
 # 2. Known URL shortener / redirect services
@@ -84,6 +99,7 @@ suspicious_tlds:
 #    e.g. echallan-parivahan.xyz — "echallan" appears but domain is not official.
 # ─────────────────────────────────────────────────────────────────────────────
 brand_impersonation_keywords:
+  # Traffic / Transport
   - echallan
   - e-challan
   - parivahan
@@ -94,11 +110,19 @@ brand_impersonation_keywords:
   - traffic-police
   - trafficpolice
   - challan
+  # General Government
   - gov-india
   - govindia
   - india-gov
   - indiangov
   - morth
+  - digitalindia
+  - digilocker
+  - aadhaar
+  - uidai
+  # Cybercrime
+  - cybercrime
+  - cyber-crime
 
 # ─────────────────────────────────────────────────────────────────────────────
 # 5. Typosquat target domains
@@ -111,6 +135,10 @@ typosquat_targets:
   - mparivahan
   - sarathi
   - vahan
+  - digitalindia
+  - digilocker
+  - cybercrime
+  - indiapost
 
 # ─────────────────────────────────────────────────────────────────────────────
 # 6. APK / application download path keywords

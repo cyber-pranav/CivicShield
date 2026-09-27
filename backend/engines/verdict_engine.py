@@ -36,6 +36,25 @@ _FRAUD_MIXED_MED: int = _THRESHOLDS.get("fraudulent_mixed_medium_with_high", 2)
 _GENUINE_REQ_OFFICIAL: bool = _THRESHOLDS.get("genuine_requires_official_domain", True)
 _GENUINE_REQ_ZERO_HIGH: bool = _THRESHOLDS.get("genuine_requires_zero_high", True)
 
+# Category definitions (sourced from YAML)
+_CATEGORY_DEFS: dict = _LANG_RULES.get("category_definitions", {})
+
+# Fallback official URLs when no category match is found
+_DEFAULT_OFFICIAL_URLS: list[str] = ["https://echallan.parivahan.gov.in/"]
+
+
+def _official_urls_for_category(category: str) -> list[str]:
+    """Return official verification URLs for the given category from YAML config."""
+    cat_def = _CATEGORY_DEFS.get(category, {})
+    return cat_def.get("official_urls", _DEFAULT_OFFICIAL_URLS)
+
+
+def _format_verification_hint(official_urls: list[str]) -> str:
+    """Build a human-readable hint string listing official URLs for verification."""
+    if official_urls:
+        return f"Always verify details on the relevant official website (e.g. {official_urls[0]})."
+    return "Always verify details on the relevant official government website."
+
 
 def compute_verdict(
     evidence: list[EvidenceItem],
@@ -44,13 +63,23 @@ def compute_verdict(
     medium_count: int,
     low_count: int,
     input_type: str,
+    category: str = "government_notice",
+    official_urls: list[str] | None = None,
 ) -> tuple[str, str, str, list[str]]:
     """
     Compute the overall verdict.
 
+    Args:
+        category:      Detected communication category (e.g. "government_notice").
+        official_urls: Category-specific official verification URLs.
+
     Returns:
         (verdict, risk_level, reasoning, recommended_actions)
     """
+    if official_urls is None:
+        official_urls = _official_urls_for_category(category)
+
+    verification_hint = _format_verification_hint(official_urls)
 
     # Official domain presence check:
     # For URL input: at least one analyzed URL must be confirmed official.
@@ -107,14 +136,14 @@ def compute_verdict(
                 "The communication references a confirmed official Government of India domain "
                 "with no high-severity suspicious signals. One minor advisory indicator was noted "
                 "but does not invalidate the official domain origin. "
-                "Always verify the notice details directly on the official government website (e.g. https://echallan.parivahan.gov.in/)."
+                + verification_hint
             )
         else:
             reasoning = (
                 "No high-severity or medium-severity suspicious signals were found, and the URL "
                 "points to an official Government of India domain. "
                 "This is consistent with a genuine official government communication. "
-                "Always verify the notice details on the official government website (e.g. https://echallan.parivahan.gov.in/)."
+                + verification_hint
             )
 
     # Path E: OTHERWISE -> UNABLE TO VERIFY
@@ -125,7 +154,7 @@ def compute_verdict(
             reasoning = (
                 "No suspicious signals were detected, but no official government domain could be confirmed. "
                 "CivicShield cannot certify authenticity without an official domain reference. "
-                "Please verify independently on the official government website (e.g. https://echallan.parivahan.gov.in/)."
+                f"Please verify independently. {verification_hint}"
             )
         elif has_official_url and high_count >= 1:
             reasoning = (
@@ -136,11 +165,14 @@ def compute_verdict(
             reasoning = (
                 f"Found {high_count} HIGH and {medium_count} MEDIUM-severity signal(s) "
                 "— insufficient or conflicting evidence to classify as clearly fraudulent or clearly genuine. "
-                "Treat with caution and verify independently on the official government website (e.g. https://echallan.parivahan.gov.in/)."
+                f"Treat with caution and verify independently. {verification_hint}"
             )
 
     # ─── Recommended actions ─────────────────────────────────────────────────
-    actions = _build_recommended_actions(verdict, evidence, url_analyses, has_official_url)
+    actions = _build_recommended_actions(
+        verdict, evidence, url_analyses, has_official_url,
+        category=category, official_urls=official_urls,
+    )
 
     return verdict, risk_level, reasoning, actions
 
@@ -150,14 +182,20 @@ def _build_recommended_actions(
     evidence: list[EvidenceItem],
     url_analyses: list[UrlAnalysisResult],
     has_official_url: bool,
+    category: str = "government_notice",
+    official_urls: list[str] | None = None,
 ) -> list[str]:
     """Build context-appropriate recommended actions for the citizen."""
     actions: list[str] = []
 
-    # Always include official verification
+    if official_urls is None:
+        official_urls = _official_urls_for_category(category)
+
+    # Primary verification action — category-aware
+    primary_url = official_urls[0] if official_urls else "the relevant official government website"
     actions.append(
-        "Verify any notice or reference details on the official government website (e.g. https://echallan.parivahan.gov.in/) "
-        "— you will need only the official reference number or registered vehicle details."
+        f"Verify any notice or reference details on the official government website (e.g. {primary_url}) "
+        "— you will need only the official reference number or registered details."
     )
 
     if verdict == "Likely Fraudulent":
@@ -171,13 +209,13 @@ def _build_recommended_actions(
         ]
     elif verdict == "Likely Genuine":
         actions += [
-            "Cross-verify the notice details directly on the official government website (e.g. https://echallan.parivahan.gov.in/) before taking action or paying.",
+            f"Cross-verify the notice details directly on the official government website (e.g. {primary_url}) before taking action or paying.",
             "Pay only through official government websites — do not pay via UPI IDs sent in messages.",
         ]
     else:  # Unable to Verify
         actions += [
             "Exercise caution — do not click links or pay until you have verified independently.",
-            "Visit the official government website (e.g. https://echallan.parivahan.gov.in/) to check if this notice exists.",
+            f"Visit the official government website (e.g. {primary_url}) to check if this notice exists.",
             "If uncertain, contact the relevant official department or authority in person.",
         ]
 
@@ -195,7 +233,7 @@ def _build_recommended_actions(
     if has_upi_risk:
         actions.append(
             "Do NOT pay to the UPI ID in this message. "
-            "Use only the official payment gateway at https://echallan.parivahan.gov.in/"
+            f"Use only the official payment gateway at {primary_url}"
         )
 
     return actions

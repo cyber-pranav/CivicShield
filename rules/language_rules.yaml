@@ -288,6 +288,45 @@ genuine_signals:
       verified at echallan.parivahan.gov.in.
 
 # ─────────────────────────────────────────────────────────────────────────────
+# SECTION D: Category Definitions
+# Maps detected communication categories to official verification URLs
+# and display labels. Used by the category detector and verdict engine.
+# ─────────────────────────────────────────────────────────────────────────────
+category_definitions:
+  government_notice:
+    label: "Government Notice / Traffic Challan"
+    official_urls:
+      - "https://echallan.parivahan.gov.in/"
+      - "https://parivahan.gov.in/"
+    description: >
+      Traffic violation notices, RTO communications, vehicle-related
+      government notices, and other official government service messages.
+
+  banking:
+    label: "Banking / Financial Communication"
+    official_urls:
+      - "https://www.rbi.org.in/"
+    description: >
+      Bank account alerts, KYC requests, loan notices, and other
+      financial service communications.
+
+  delivery:
+    label: "Delivery / Courier Notification"
+    official_urls:
+      - "https://www.indiapost.gov.in/"
+    description: >
+      Package delivery, customs duty, courier notifications, and
+      postal service communications.
+
+  generic_phishing:
+    label: "Generic Phishing / Scam"
+    official_urls:
+      - "https://cybercrime.gov.in/"
+    description: >
+      Prize scams, account suspension threats, credential harvesting,
+      and other general phishing attempts.
+
+# ─────────────────────────────────────────────────────────────────────────────
 # Verdict thresholds (configurable)
 # ─────────────────────────────────────────────────────────────────────────────
 verdict_thresholds:
