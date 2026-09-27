@@ -162,7 +162,8 @@ export function ResultPage({ result, onReset }: Props) {
       <div className="official-link-card">
         <span className="official-link-icon">🏛️</span>
         <div className="official-link-text">
-          <strong>Official Verification:</strong> Check any challan number at{" "}
+          <strong>Official Verification:</strong> Always verify notice and reference details directly
+          on the relevant official government website (for traffic violations, check{" "}
           <a
             href={result.official_verification_url}
             target="_blank"
@@ -170,11 +171,11 @@ export function ResultPage({ result, onReset }: Props) {
           >
             {result.official_verification_url}
           </a>{" "}
-          — you only need the challan number or vehicle registration number.
+          using your notice or registration number).
           <br />
           <span style={{ fontSize: "0.75rem", color: "var(--text-muted)" }}>
-            CivicShield does not connect to this portal. This link opens in a
-            new tab for you to verify directly.
+            CivicShield does not connect to government portals. This link opens in a
+            new tab for you to verify directly on the official website.
           </span>
         </div>
       </div>

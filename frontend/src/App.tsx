@@ -34,7 +34,7 @@ function App() {
         }}
       >
         CivicShield — Academic Design Engineering / IDT Prototype · Not for production use ·
-        For official challan verification:{" "}
+        For official verification:{" "}
         <a
           href="https://echallan.parivahan.gov.in/"
           target="_blank"

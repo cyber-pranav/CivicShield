@@ -107,14 +107,14 @@ def compute_verdict(
                 "The communication references a confirmed official Government of India domain "
                 "with no high-severity suspicious signals. One minor advisory indicator was noted "
                 "but does not invalidate the official domain origin. "
-                "Always verify the challan number directly at https://echallan.parivahan.gov.in/."
+                "Always verify the notice details directly on the official government website (e.g. https://echallan.parivahan.gov.in/)."
             )
         else:
             reasoning = (
                 "No high-severity or medium-severity suspicious signals were found, and the URL "
                 "points to an official Government of India domain. "
-                "This is consistent with a genuine e-Challan communication. "
-                "Always verify the challan number at https://echallan.parivahan.gov.in/."
+                "This is consistent with a genuine official government communication. "
+                "Always verify the notice details on the official government website (e.g. https://echallan.parivahan.gov.in/)."
             )
 
     # Path E: OTHERWISE -> UNABLE TO VERIFY
@@ -125,7 +125,7 @@ def compute_verdict(
             reasoning = (
                 "No suspicious signals were detected, but no official government domain could be confirmed. "
                 "CivicShield cannot certify authenticity without an official domain reference. "
-                "Please verify independently at https://echallan.parivahan.gov.in/."
+                "Please verify independently on the official government website (e.g. https://echallan.parivahan.gov.in/)."
             )
         elif has_official_url and high_count >= 1:
             reasoning = (
@@ -136,7 +136,7 @@ def compute_verdict(
             reasoning = (
                 f"Found {high_count} HIGH and {medium_count} MEDIUM-severity signal(s) "
                 "— insufficient or conflicting evidence to classify as clearly fraudulent or clearly genuine. "
-                "Treat with caution and verify independently at https://echallan.parivahan.gov.in/."
+                "Treat with caution and verify independently on the official government website (e.g. https://echallan.parivahan.gov.in/)."
             )
 
     # ─── Recommended actions ─────────────────────────────────────────────────
@@ -156,8 +156,8 @@ def _build_recommended_actions(
 
     # Always include official verification
     actions.append(
-        "Verify any challan number at the official portal: https://echallan.parivahan.gov.in/ "
-        "— you will need only the challan number or vehicle registration number."
+        "Verify any notice or reference details on the official government website (e.g. https://echallan.parivahan.gov.in/) "
+        "— you will need only the official reference number or registered vehicle details."
     )
 
     if verdict == "Likely Fraudulent":
@@ -165,20 +165,20 @@ def _build_recommended_actions(
             "Do NOT click any links in this message.",
             "Do NOT download any files or APKs mentioned in this message.",
             "Do NOT share any OTP, password, or personal details.",
-            "Do NOT make any payment through links in this message — use the official portal only.",
+            "Do NOT make any payment through links in this message — use official government websites only.",
             "Report this fraudulent message to the National Cyber Crime Reporting Portal: https://cybercrime.gov.in/",
             "Forward suspicious messages to 1930 (National Cyber Crime Helpline).",
         ]
     elif verdict == "Likely Genuine":
         actions += [
-            "Cross-verify the challan details at https://echallan.parivahan.gov.in/ before paying.",
-            "Pay only through the official portal — do not pay via UPI IDs sent in messages.",
+            "Cross-verify the notice details directly on the official government website (e.g. https://echallan.parivahan.gov.in/) before taking action or paying.",
+            "Pay only through official government websites — do not pay via UPI IDs sent in messages.",
         ]
     else:  # Unable to Verify
         actions += [
             "Exercise caution — do not click links or pay until you have verified independently.",
-            "Visit https://echallan.parivahan.gov.in/ to check if a challan exists for your vehicle.",
-            "If uncertain, contact your nearest RTO office in person.",
+            "Visit the official government website (e.g. https://echallan.parivahan.gov.in/) to check if this notice exists.",
+            "If uncertain, contact the relevant official department or authority in person.",
         ]
 
     # Context-specific additions

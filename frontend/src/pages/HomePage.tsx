@@ -209,7 +209,7 @@ export function HomePage() {
           <div className="official-link-card" style={{ padding: "10px 12px" }}>
             <span style={{ fontSize: "1rem" }}>🏛️</span>
             <div style={{ fontSize: "0.78rem", color: "var(--text-secondary)" }}>
-              Official e-Challan portal:{" "}
+              Official government portal:{" "}
               <a
                 href="https://echallan.parivahan.gov.in/"
                 target="_blank"
