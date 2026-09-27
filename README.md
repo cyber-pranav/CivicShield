@@ -82,18 +82,15 @@ civicshield/
 
 ```bash
 # From project root
-cd backend
-
 # Create virtual environment
 python -m venv venv
 .\venv\Scripts\activate   # Windows
 # source venv/bin/activate  # Linux/macOS
 
-# Install dependencies
+# Install dependencies (from project root)
 pip install -r requirements.txt
 
 # Start the server (from project root)
-cd ..
 python -m uvicorn backend.main:app --reload --port 8000
 ```
 
@@ -203,6 +200,7 @@ All demo cases are clearly labelled `SYNTHETIC TEST CASE — NOT A REAL NOTICE`.
 5. **ML model scope**: The ML model is trained on PhiUSIIL which is a general phishing URL dataset, not specific to Indian government impersonation.
 6. **Language**: Currently English only. Hinglish and regional-language messages are not processed.
 7. **No webpage analysis**: Page content, SSL certificate details, and WHOIS data are not checked (deferred to P2).
+8. **Ephemeral storage on Render**: The SQLite database (`civicshield.db`) is stored on an ephemeral disk and is not persisted across Render deploys or restarts.
 
 ---
 

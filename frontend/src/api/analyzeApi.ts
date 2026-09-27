@@ -9,11 +9,11 @@ function getApiBaseUrl(): string {
   // 1. Environment variable if provided at build time
   const envUrl = import.meta.env.VITE_API_BASE_URL;
   if (envUrl && typeof envUrl === "string" && envUrl.trim() !== "") {
-    let base = envUrl.trim();
+    let base = envUrl.trim().replace(/\/+$/, "");
     if (!base.startsWith("http://") && !base.startsWith("https://")) {
       base = `https://${base}`;
     }
-    return base.endsWith("/api") ? base : `${base.replace(/\/$/, "")}/api`;
+    return base.endsWith("/api") ? base : `${base}/api`;
   }
 
   // 2. Runtime browser location detection for cloud hosts (e.g. Render, Vercel)

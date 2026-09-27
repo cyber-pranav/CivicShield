@@ -25,7 +25,7 @@ services:
         fromService:
           type: web
           name: civicshield-backend
-          property: host
+          envVarKey: RENDER_EXTERNAL_URL
     routes:
       - type: rewrite
         source: /*
