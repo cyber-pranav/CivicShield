@@ -56,6 +56,23 @@ def analyze_scam_language(text: str) -> list[EvidenceItem]:
                 rule_id=rule_id,
             ))
 
+    # Add dynamic DB phrases
+    try:
+        from backend.engines.indicator_cache import get_merged_indicators
+        db_phrases = get_merged_indicators("phrase")
+        for ind in db_phrases:
+            if ind["value"].lower() in text_lower:
+                evidence.append(EvidenceItem(
+                    evidence_type="LANGUAGE_SIGNAL",
+                    finding=f"Message contains suspicious phrase: '{ind['value']}'",
+                    severity=ind["severity"],
+                    explanation=ind.get("description") or "Suspicious phrasing detected by dynamic rules.",
+                    source="scam_language_engine",
+                    rule_id="dynamic_db_phrase",
+                ))
+    except Exception:
+        pass
+
     return evidence
 
 

@@ -47,11 +47,60 @@ try:
 except Exception:
     _RULES = {}
 
-_OFFICIAL_DOMAINS: set[str] = set(_RULES.get("official_domains", []))
-_URL_SHORTENERS: set[str] = set(_RULES.get("url_shorteners", []))
-_SUSPICIOUS_TLDS: set[str] = set(_RULES.get("suspicious_tlds", []))
-_BRAND_KEYWORDS: list[str] = _RULES.get("brand_impersonation_keywords", [])
-_APK_KEYWORDS: list[str] = _RULES.get("apk_path_keywords", [])
+_BASE_OFFICIAL_DOMAINS: set[str] = set(_RULES.get("official_domains", []))
+_BASE_URL_SHORTENERS: set[str] = set(_RULES.get("url_shorteners", []))
+_BASE_SUSPICIOUS_TLDS: set[str] = set(_RULES.get("suspicious_tlds", []))
+_BASE_BRAND_KEYWORDS: list[str] = _RULES.get("brand_impersonation_keywords", [])
+_BASE_APK_KEYWORDS: list[str] = _RULES.get("apk_path_keywords", [])
+_BASE_TYPOSQUAT_TARGETS: list[str] = _RULES.get("typosquat_targets", [])
+
+def get_typosquat_targets() -> list[str]:
+    try:
+        from backend.engines.indicator_cache import get_merged_indicators
+        db_inds = get_merged_indicators("typosquat_target")
+        return _BASE_TYPOSQUAT_TARGETS + [i["value"] for i in db_inds]
+    except Exception:
+        return _BASE_TYPOSQUAT_TARGETS
+
+def get_official_domains() -> set[str]:
+    try:
+        from backend.engines.indicator_cache import get_merged_indicators
+        db_inds = get_merged_indicators("domain")
+        return _BASE_OFFICIAL_DOMAINS.union(i["value"] for i in db_inds)
+    except Exception:
+        return _BASE_OFFICIAL_DOMAINS
+
+def get_url_shorteners() -> set[str]:
+    try:
+        from backend.engines.indicator_cache import get_merged_indicators
+        db_inds = get_merged_indicators("url_shortener")
+        return _BASE_URL_SHORTENERS.union(i["value"] for i in db_inds)
+    except Exception:
+        return _BASE_URL_SHORTENERS
+
+def get_suspicious_tlds() -> set[str]:
+    try:
+        from backend.engines.indicator_cache import get_merged_indicators
+        db_inds = get_merged_indicators("suspicious_tld")
+        return _BASE_SUSPICIOUS_TLDS.union(i["value"] for i in db_inds)
+    except Exception:
+        return _BASE_SUSPICIOUS_TLDS
+
+def get_brand_keywords() -> list[str]:
+    try:
+        from backend.engines.indicator_cache import get_merged_indicators
+        db_inds = get_merged_indicators("brand_keyword")
+        return _BASE_BRAND_KEYWORDS + [i["value"] for i in db_inds]
+    except Exception:
+        return _BASE_BRAND_KEYWORDS
+
+def get_apk_keywords() -> list[str]:
+    try:
+        from backend.engines.indicator_cache import get_merged_indicators
+        db_inds = get_merged_indicators("apk_keyword")
+        return _BASE_APK_KEYWORDS + [i["value"] for i in db_inds]
+    except Exception:
+        return _BASE_APK_KEYWORDS
 
 
 def is_ip_address(hostname: str) -> bool:
@@ -76,7 +125,7 @@ def is_official_gov_domain(hostname: str) -> bool:
     if not hostname:
         return False
     norm_host = hostname.lower().rstrip(".")
-    for od in _OFFICIAL_DOMAINS:
+    for od in get_official_domains():
         od_norm = od.lower().rstrip(".")
         if norm_host == od_norm or norm_host.endswith("." + od_norm):
             return True
@@ -119,10 +168,10 @@ def extract_url_features(url: str) -> dict[str, int]:
 
         features["has_ip_host"] = int(is_ip_address(hostname))
         features["scheme_is_http"] = int(scheme == "http")
-        features["is_url_shortener"] = int(hostname in _URL_SHORTENERS)
+        features["is_url_shortener"] = int(hostname in get_url_shorteners())
 
         tld_key = f".{suffix}".lower() if suffix else ""
-        features["suspicious_tld"] = int(tld_key in _SUSPICIOUS_TLDS)
+        features["suspicious_tld"] = int(tld_key in get_suspicious_tlds())
         features["num_dots_in_domain"] = full_host.count(".")
         features["num_hyphens_in_domain"] = full_domain.count("-")
         features["has_at_symbol"] = int("@" in url_str)
@@ -131,12 +180,12 @@ def extract_url_features(url: str) -> dict[str, int]:
 
         # Brand keyword in non-official domain
         is_official = is_official_gov_domain(hostname)
-        brand_hit = (not is_official) and any(kw in full_host for kw in _BRAND_KEYWORDS)
+        brand_hit = (not is_official) and any(kw in full_host for kw in get_brand_keywords())
         features["brand_keyword_in_domain"] = int(brand_hit)
 
         # APK in URL
         url_lower = url_str.lower()
-        features["apk_in_url"] = int(any(kw in url_lower for kw in _APK_KEYWORDS))
+        features["apk_in_url"] = int(any(kw in url_lower for kw in get_apk_keywords()))
 
     except Exception:
         pass

@@ -19,6 +19,7 @@ from slowapi.errors import RateLimitExceeded
 from backend.limiter import limiter
 
 from backend.routers.analyze import router as analyze_router
+from backend.routers.admin import router as admin_router
 from backend.db.database import init_db
 
 
@@ -70,3 +71,4 @@ app.add_middleware(
 
 # Include routers
 app.include_router(analyze_router, prefix="/api")
+app.include_router(admin_router, prefix="/api/admin", tags=["admin"])

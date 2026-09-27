@@ -88,6 +88,23 @@ def analyze_challan_text(text: str) -> list[EvidenceItem]:
                 rule_id=rule_id,
             ))
 
+    # Add dynamic DB UPI VPAs
+    try:
+        from backend.engines.indicator_cache import get_merged_indicators
+        db_upis = get_merged_indicators("upi_vpa")
+        for ind in db_upis:
+            if ind["value"].lower() in text_lower:
+                evidence.append(EvidenceItem(
+                    evidence_type="RULE_MATCH",
+                    finding=f"Message contains suspicious UPI VPA: '{ind['value']}'",
+                    severity=ind["severity"],
+                    explanation=ind.get("description") or "Suspicious UPI ID detected by dynamic rules.",
+                    source="challan_rule_engine",
+                    rule_id="dynamic_db_upi_vpa",
+                ))
+    except Exception:
+        pass
+
     return evidence
 
 

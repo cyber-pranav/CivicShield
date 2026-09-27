@@ -132,3 +132,29 @@ class AnalysisResult(BaseModel):
     high_severity_count: int = 0
     medium_severity_count: int = 0
     low_severity_count: int = 0
+
+# ─────────────────────────────────────────────────────────────────────────────
+# Indicators API Schemas
+# ─────────────────────────────────────────────────────────────────────────────
+
+class IndicatorBase(BaseModel):
+    indicator_type: str  # 'domain', 'url_pattern', 'phrase', 'upi_vpa', 'brand_keyword'
+    value: str
+    category: str = "government_notice"
+    severity: str = "HIGH"
+    source: str = "manual"
+    description: str | None = None
+
+class IndicatorCreate(IndicatorBase):
+    pass
+
+class IndicatorUpdate(BaseModel):
+    is_active: bool | None = None
+    severity: str | None = None
+    description: str | None = None
+
+class IndicatorResponse(IndicatorBase):
+    id: int
+    is_active: bool
+    created_at: str
+    updated_at: str

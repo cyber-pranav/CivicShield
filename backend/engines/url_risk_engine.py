@@ -56,6 +56,11 @@ from backend.engines.url_features import (
     is_ip_address as _is_ip_address,
     is_official_gov_domain,
     extract_registered_domain as _extract_registered_domain,
+    get_url_shorteners,
+    get_suspicious_tlds,
+    get_brand_keywords,
+    get_apk_keywords,
+    get_typosquat_targets,
 )
 
 # ── IDN / Unicode homograph helpers ──────────────────────────────────────────
@@ -91,12 +96,6 @@ _RULES_PATH = Path(__file__).resolve().parents[2] / "rules" / "url_rules.yaml"
 with open(_RULES_PATH, "r", encoding="utf-8") as _f:
     _RULES = yaml.safe_load(_f)
 
-_OFFICIAL_DOMAINS: set[str] = set(_RULES.get("official_domains", []))
-_URL_SHORTENERS: set[str] = set(_RULES.get("url_shorteners", []))
-_SUSPICIOUS_TLDS: set[str] = set(_RULES.get("suspicious_tlds", []))
-_BRAND_KEYWORDS: list[str] = _RULES.get("brand_impersonation_keywords", [])
-_TYPOSQUAT_TARGETS: list[str] = _RULES.get("typosquat_targets", [])
-_APK_KEYWORDS: list[str] = _RULES.get("apk_path_keywords", [])
 _THRESHOLDS: dict = _RULES.get("thresholds", {})
 
 _MAX_LEN_WARN = _THRESHOLDS.get("max_url_length_warning", 100)
@@ -122,7 +121,7 @@ def _min_typosquat_distance(domain: str) -> int:
     if not _LEVENSHTEIN_AVAILABLE or not domain:
         return 999
     domain_lower = domain.lower()
-    return min(levenshtein_distance(domain_lower, t) for t in _TYPOSQUAT_TARGETS)
+    return min(levenshtein_distance(domain_lower, t) for t in get_typosquat_targets())
 
 
 # ─────────────────────────────────────────────────────────────────────────────
@@ -204,7 +203,7 @@ def analyze_url(url: str, ml_model=None) -> UrlAnalysisResult:
         ))
 
     # 4. URL shortener
-    features["is_url_shortener"] = hostname in _URL_SHORTENERS
+    features["is_url_shortener"] = hostname in get_url_shorteners()
     if features["is_url_shortener"]:
         evidence.append(EvidenceItem(
             evidence_type="URL_RISK",
@@ -220,7 +219,7 @@ def analyze_url(url: str, ml_model=None) -> UrlAnalysisResult:
 
     # 5. Suspicious TLD
     tld_check = f".{suffix}".lower() if suffix else ""
-    features["suspicious_tld"] = tld_check in _SUSPICIOUS_TLDS
+    features["suspicious_tld"] = tld_check in get_suspicious_tlds()
     if features["suspicious_tld"]:
         evidence.append(EvidenceItem(
             evidence_type="URL_RISK",
@@ -309,7 +308,7 @@ def analyze_url(url: str, ml_model=None) -> UrlAnalysisResult:
     features["brand_keyword_in_domain"] = False
     found_keywords = []
     if not features["is_official_domain"] and not _is_ip_address(hostname):
-        for kw in _BRAND_KEYWORDS:
+        for kw in get_brand_keywords():
             if kw in full_host_with_sub.lower():
                 features["brand_keyword_in_domain"] = True
                 found_keywords.append(kw)
@@ -347,7 +346,7 @@ def analyze_url(url: str, ml_model=None) -> UrlAnalysisResult:
         ))
 
     # 14. APK in URL
-    features["apk_in_url"] = any(kw in full_url_lower for kw in _APK_KEYWORDS)
+    features["apk_in_url"] = any(kw in full_url_lower for kw in get_apk_keywords())
     if features["apk_in_url"]:
         evidence.append(EvidenceItem(
             evidence_type="URL_RISK",
