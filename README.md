@@ -107,6 +107,10 @@ npm run dev
 
 Frontend runs at `http://localhost:5173`
 
+### Deployment (Render)
+
+If deploying to Render using a managed PostgreSQL instance for the `DATABASE_URL` environment variable, note that **Render's free-tier PostgreSQL expires after 30 days unless upgraded**. The database and all dynamically added indicators will be lost when the instance expires.
+
 ---
 
 ## Dataset Information
