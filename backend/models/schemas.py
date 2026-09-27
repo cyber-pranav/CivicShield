@@ -87,6 +87,9 @@ class AnalysisResult(BaseModel):
     verdict: Literal["Likely Genuine", "Likely Fraudulent", "Unable to Verify"]
     risk_level: Literal["HIGH", "MEDIUM", "LOW", "UNKNOWN"]
 
+    # Detected communication category
+    detected_category: str = "government_notice"
+
     # Analysis mode used (STATIC | ENRICHED)
     analysis_mode: AnalysisMode = "STATIC"
 
@@ -109,7 +112,10 @@ class AnalysisResult(BaseModel):
     # Recommended next steps for the citizen
     recommended_actions: list[str] = []
 
-    # Official verification route
+    # Category-specific official verification URLs
+    official_verification_urls: list[str] = ["https://echallan.parivahan.gov.in/"]
+
+    # Backward-compatible alias — returns the first official URL
     official_verification_url: str = "https://echallan.parivahan.gov.in/"
 
     # Mandatory disclaimer
