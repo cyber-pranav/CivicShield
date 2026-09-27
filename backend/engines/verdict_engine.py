@@ -59,6 +59,8 @@ def compute_verdict(
         u.features.get("is_official_domain", False) for u in url_analyses
     )
 
+    # Note on signal independence: URL-structural signals (e.g. brand in fake domain) and message-lexical signals (e.g. e-Challan terminology) are intentionally distinct orthogonal evidence types and not duplicate counts.
+
     # ─── Deterministic verdict precedence ─────────────────────────────────────
     verdict: str
     risk_level: str
