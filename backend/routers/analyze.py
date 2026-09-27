@@ -20,6 +20,7 @@ Input validation happens at two layers:
 from __future__ import annotations
 from typing import Optional, Annotated
 import traceback
+from pathlib import Path
 
 from fastapi import APIRouter, UploadFile, File, Form, HTTPException
 from fastapi.responses import JSONResponse
@@ -36,6 +37,7 @@ from backend.engines.challan_rule_engine import analyze_challan_text
 from backend.engines.scam_language_engine import analyze_scam_language
 from backend.engines.evidence_engine import aggregate_evidence
 from backend.engines.verdict_engine import compute_verdict
+from backend.engines.category_detector import detect_category
 from backend.db.database import log_analysis
 from ml.url_model_loader import load_model
 
@@ -149,6 +151,18 @@ async def analyze(
         intel_evidence,
     )
 
+    # ── Detect communication category ────────────────────────────────────────────
+    category = detect_category(challan_evidence, scam_evidence, url_analyses)
+
+    # ── Load category-specific official URLs from YAML ───────────────────────
+    import yaml as _yaml
+    _rules_path = Path(__file__).resolve().parents[2] / "rules" / "language_rules.yaml"
+    with open(_rules_path, "r", encoding="utf-8") as _rf:
+        _lang_rules = _yaml.safe_load(_rf)
+    _cat_defs = _lang_rules.get("category_definitions", {})
+    _cat_def = _cat_defs.get(category, {})
+    official_urls = _cat_def.get("official_urls", ["https://echallan.parivahan.gov.in/"])
+
     # ── Verdict ───────────────────────────────────────────────────────────────
     verdict, risk_level, reasoning, actions = compute_verdict(
         evidence=all_evidence,
@@ -157,6 +171,8 @@ async def analyze(
         medium_count=medium_count,
         low_count=low_count,
         input_type=input_type,
+        category=category,
+        official_urls=official_urls,
     )
 
     # ── ENRICHED mode privacy note ────────────────────────────────────────────
@@ -178,6 +194,7 @@ async def analyze(
             high_count=high_count,
             medium_count=medium_count,
             low_count=low_count,
+            detected_category=category,
         )
     except Exception:
         processing_notes.append("Database logging failed — analysis result unaffected.")
@@ -189,6 +206,7 @@ async def analyze(
     return AnalysisResult(
         verdict=verdict,
         risk_level=risk_level,
+        detected_category=category,
         analysis_mode=effective_mode,
         evidence=all_evidence,
         extracted_text=extracted_text or None,
@@ -197,6 +215,8 @@ async def analyze(
         intel_results=intel_results_schema,
         verdict_reasoning=reasoning,
         recommended_actions=actions,
+        official_verification_urls=official_urls,
+        official_verification_url=official_urls[0] if official_urls else "https://echallan.parivahan.gov.in/",
         processing_notes=processing_notes,
         input_type_processed=input_type,
         high_severity_count=high_count,
