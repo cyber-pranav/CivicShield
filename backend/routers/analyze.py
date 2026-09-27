@@ -22,8 +22,10 @@ from typing import Optional, Annotated
 import traceback
 from pathlib import Path
 
-from fastapi import APIRouter, UploadFile, File, Form, HTTPException
+from fastapi import APIRouter, UploadFile, File, Form, HTTPException, Request
 from fastapi.responses import JSONResponse
+
+from backend.limiter import limiter
 
 from backend.models.schemas import (
     AnalysisResult,
@@ -62,9 +64,10 @@ def _to_schema(intel_result) -> ThreatIntelResultSchema:
         provider_available=intel_result.provider_available,
     )
 
-
 @router.post("/analyze", response_model=AnalysisResult)
+@limiter.limit("30/minute")
 async def analyze(
+    request: Request,
     input_type: Annotated[str, Form()],
     content: Annotated[Optional[str], Form()] = None,
     file: Annotated[Optional[UploadFile], File()] = None,
@@ -226,7 +229,8 @@ async def analyze(
 
 
 @router.get("/health")
-async def health_check():
+@limiter.limit("60/minute")
+async def health_check(request: Request):
     """Health check endpoint."""
     from backend.intelligence.urlhaus_provider import URLhausProvider
     from backend.intelligence.gsb_provider import GoogleSafeBrowsingProvider
