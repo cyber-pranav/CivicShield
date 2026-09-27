@@ -24,8 +24,11 @@ _DEFAULT_DB_URL = f"sqlite:///{Path(__file__).resolve().parents[2] / 'civicshiel
 _DB_URL = os.getenv("DATABASE_URL", _DEFAULT_DB_URL)
 
 # Render Postgres URLs use postgres:// but SQLAlchemy requires postgresql://
+# We force postgresql+psycopg2:// to ensure it uses the psycopg2-binary package.
 if _DB_URL.startswith("postgres://"):
-    _DB_URL = _DB_URL.replace("postgres://", "postgresql://", 1)
+    _DB_URL = _DB_URL.replace("postgres://", "postgresql+psycopg2://", 1)
+elif _DB_URL.startswith("postgresql://"):
+    _DB_URL = _DB_URL.replace("postgresql://", "postgresql+psycopg2://", 1)
 
 _connect_args = {"check_same_thread": False} if _DB_URL.startswith("sqlite") else {}
 _ENGINE = create_engine(_DB_URL, connect_args=_connect_args)
