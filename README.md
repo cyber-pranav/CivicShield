@@ -1,6 +1,6 @@
 # CivicShield
 
-**An evidence-based platform for detecting suspicious Indian government e-Challan / RTO communications.**
+**An evidence-based platform for detecting suspicious Indian government communications and notices, with a focus on e-Challan / RTO scams.**
 
 > ⚠️ **Academic Prototype**: This is a Design Engineering / IDT academic prototype. It is not a certified fraud-detection tool and does not certify the authenticity of any government communication.
 >
@@ -10,7 +10,7 @@
 
 ## Project Purpose
 
-Fraudulent e-Challan messages targeting Indian vehicle owners are common. CivicShield helps citizens evaluate whether a received message, URL, image, or PDF is likely genuine or fraudulent — using transparent, auditable rule-based and classical ML signals.
+Fraudulent government communications — particularly fake e-Challan and RTO notices targeting citizens — are widespread. CivicShield helps citizens evaluate whether a received message, URL, image, or PDF is likely genuine or fraudulent — using transparent, auditable rule-based and classical ML signals.
 
 Every finding is explained in plain language. No black-box scores. No fabricated accuracy claims.
 

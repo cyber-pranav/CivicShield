@@ -11,7 +11,7 @@ function App() {
             <div className="logo-icon">🛡️</div>
             <div>
               CivicShield
-              <div className="logo-sub">e-Challan Fraud Detection</div>
+              <div className="logo-sub">Government Notice & Communication Verifier</div>
             </div>
           </div>
           <div className="header-badge">Academic IDT Prototype</div>

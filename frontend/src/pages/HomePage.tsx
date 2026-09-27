@@ -117,12 +117,13 @@ export function HomePage() {
             lineHeight: 1.3,
           }}
         >
-          Detect Suspicious e-Challan Communications
+          Detect Suspicious Government Communications & Notices
         </h1>
         <p style={{ color: "var(--text-secondary)", fontSize: "0.95rem", maxWidth: 680 }}>
           CivicShield analyses URLs, SMS messages, images, and PDF documents for
-          signs of e-Challan and RTO fraud. Results are evidence-based — every
-          finding is explained in plain language.
+          signs of fraudulent government notices — specialising in Indian e-Challan and
+          RTO communications. Results are evidence-based — every finding is explained
+          in plain language.
         </p>
       </div>
 
@@ -189,7 +190,7 @@ export function HomePage() {
                 "Text extracted (OCR for images)",
                 "URLs found and analysed structurally",
                 "IDN/homograph domain checks applied",
-                "e-Challan and scam rules applied",
+                "Official notice and scam rules applied",
                 "Evidence assembled, verdict computed",
                 "ENRICHED: external threat-intel checked",
                 "Every signal explained in plain language",

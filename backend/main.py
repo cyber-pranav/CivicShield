@@ -28,7 +28,8 @@ async def lifespan(app: FastAPI):
 app = FastAPI(
     title="CivicShield API",
     description=(
-        "Evidence-based analysis of suspicious Indian government e-Challan/RTO communications. "
+        "Evidence-based analysis of suspicious Indian government communications and notices, "
+        "specialising in e-Challan / RTO fraud detection. "
         "CivicShield provides an evidence-based assessment and does not certify the authenticity "
         "of a government communication."
     ),
