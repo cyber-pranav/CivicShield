@@ -37,18 +37,22 @@ app = FastAPI(
 )
 
 # CORS — allow Vite dev server, production build, and environment overrides
-allowed_origins_env = os.getenv("ALLOWED_ORIGINS", "")
 allowed_origins = [
     "http://localhost:5173",
     "http://127.0.0.1:5173",
     "http://localhost:3000",
+    "http://127.0.0.1:3000",
 ]
+allowed_origins_env = os.getenv("ALLOWED_ORIGINS", "")
 if allowed_origins_env:
-    allowed_origins.extend([origin.strip() for origin in allowed_origins_env.split(",") if origin.strip()])
+    for origin in allowed_origins_env.split(","):
+        origin_clean = origin.strip()
+        if origin_clean and origin_clean not in allowed_origins:
+            allowed_origins.append(origin_clean)
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=allowed_origins if allowed_origins_env else ["*"],
+    allow_origins=allowed_origins,
     allow_credentials=False,
     allow_methods=["GET", "POST", "OPTIONS"],
     allow_headers=["*"],
