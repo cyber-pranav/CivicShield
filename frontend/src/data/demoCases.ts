@@ -10,7 +10,7 @@ import type { DemoCase } from "../types/analysis";
 export const DEMO_CASES: DemoCase[] = [
   {
     id: "demo-genuine",
-    label: "Demo A: Genuine-looking e-Challan",
+    label: "Demo A: Genuine-looking e-Challan (Govt)",
     description:
       "A realistic e-Challan notification referencing the official portal. Should return Likely Genuine or Unable to Verify.",
     inputType: "text",
@@ -38,7 +38,7 @@ Ministry of Road Transport & Highways, Government of India`,
   },
   {
     id: "demo-lookalike",
-    label: "Demo B: Fake e-Challan — Lookalike Domain",
+    label: "Demo B: Fake Notice — Lookalike Domain",
     description:
       "A fraudulent message using a domain that resembles the official portal but is not. Should return Likely Fraudulent.",
     inputType: "text",
@@ -61,30 +61,28 @@ This is your FINAL NOTICE. Pay within 24 hours.
   },
   {
     id: "demo-apk",
-    label: "Demo C: Fake e-Challan — APK Download Request",
+    label: "Demo C: Fake Banking Alert — APK Download",
     description:
-      "A fraudulent message requesting installation of an APK file. Should return Likely Fraudulent.",
+      "A fraudulent banking message requesting installation of a malicious APK file. Should return Likely Fraudulent.",
     inputType: "text",
     expectedVerdict: "Likely Fraudulent",
     badge: "SYNTHETIC TEST CASE — NOT A REAL NOTICE",
-    content: `[Important] Your Vehicle Challan Is Pending
+    content: `[Urgent] Your HDFC Bank Account is BLOCKED!
 
-Challan No: 2024/RTO/45821
-Vehicle: KA 05 MN 7777
-Violation: Overspeed
-Fine: Rs. 1500
+Dear Customer,
+Your account ending in X4582 has been temporarily restricted due to suspicious login attempts.
 
-To pay your challan easily, please download the official RTO Challan Payment App:
-http://rto-pay-india.ml/download/rto_challan_v2.apk
+To unblock and verify your KYC immediately, please download our Secure Banking App update:
+http://hdfc-kyc-verify.ml/download/bank_update_v2.apk
 
-Install the app, enter your vehicle number and pay securely.
+Install the app, enter your PAN and verify securely.
 Do not share this link with anyone.
 
-Valid for 48 hours only. After that, legal action will be initiated.`,
+Failure to verify within 24 hours will result in permanent account closure.`,
   },
   {
     id: "demo-urgent",
-    label: "Demo D: Fake e-Challan — Urgent Payment Language",
+    label: "Demo D: Fake Notice — Urgent Payment Language",
     description:
       "A fraudulent message using extreme urgency and arrest threats. Should return Likely Fraudulent.",
     inputType: "text",
@@ -107,7 +105,7 @@ This is your LAST CHANCE. Act now.
   },
   {
     id: "demo-upi",
-    label: "Demo E: Fake e-Challan — Suspicious UPI Payment Request",
+    label: "Demo E: Fake Notice — Suspicious UPI Request",
     description:
       "A fraudulent message containing a direct UPI VPA for payment, bypassing the official portal.",
     inputType: "text",

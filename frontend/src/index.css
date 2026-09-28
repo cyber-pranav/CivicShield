@@ -4,52 +4,55 @@
    No childish gradients or over-stylised AI aesthetics.
 */
 
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&family=Space+Grotesk:wght@500;600;700&display=swap');
 
 /* ── CSS Variables ─────────────────────────────────────────────────────── */
 :root {
-  /* Background scale */
-  --bg-base:       #0b0f1a;
-  --bg-surface:    #111827;
-  --bg-elevated:   #1a2235;
-  --bg-border:     #232f48;
+  /* Background scale - Obsidian */
+  --bg-base:       #020202;
+  --bg-surface:    rgba(19, 19, 19, 0.6);
+  --bg-elevated:   rgba(42, 42, 42, 0.4);
+  --bg-border:     rgba(255, 255, 255, 0.08);
 
   /* Text */
-  --text-primary:   #e8edf5;
-  --text-secondary: #8b98b3;
-  --text-muted:     #4a5568;
+  --text-primary:   #e5e2e1;
+  --text-secondary: #c4c9ac;
+  --text-muted:     #8e9379;
 
-  /* Accent — authority blue */
-  --accent:         #3b82f6;
-  --accent-hover:   #2563eb;
-  --accent-subtle:  rgba(59, 130, 246, 0.12);
+  /* Accent — Cyber Lime */
+  --accent:         #CCFF00;
+  --accent-hover:   #abd600;
+  --accent-subtle:  rgba(204, 255, 0, 0.15);
+  
+  --accent-secondary: #6366F1;
 
   /* Verdict colours */
-  --risk-high:       #ef4444;
-  --risk-high-bg:    rgba(239, 68, 68, 0.10);
-  --risk-high-border:rgba(239, 68, 68, 0.30);
+  --risk-high:       #ffb4ab;
+  --risk-high-bg:    rgba(255, 180, 171, 0.10);
+  --risk-high-border:rgba(255, 180, 171, 0.30);
 
-  --risk-medium:     #f59e0b;
-  --risk-medium-bg:  rgba(245, 158, 11, 0.10);
-  --risk-medium-border:rgba(245, 158, 11, 0.30);
+  --risk-medium:     #c0c1ff;
+  --risk-medium-bg:  rgba(192, 193, 255, 0.10);
+  --risk-medium-border:rgba(192, 193, 255, 0.30);
 
-  --risk-low:        #10b981;
-  --risk-low-bg:     rgba(16, 185, 129, 0.10);
-  --risk-low-border: rgba(16, 185, 129, 0.30);
+  --risk-low:        #c3f400;
+  --risk-low-bg:     rgba(195, 244, 0, 0.10);
+  --risk-low-border: rgba(195, 244, 0, 0.30);
 
-  --risk-info:       #6366f1;
-  --risk-info-bg:    rgba(99, 102, 241, 0.10);
-  --risk-info-border:rgba(99, 102, 241, 0.30);
+  --risk-info:       #7df4ff;
+  --risk-info-bg:    rgba(125, 244, 255, 0.10);
+  --risk-info-border:rgba(125, 244, 255, 0.30);
 
   /* Typography */
+  --font-display: 'Space Grotesk', system-ui, sans-serif;
   --font-sans: 'Inter', system-ui, -apple-system, sans-serif;
   --font-mono: 'JetBrains Mono', 'Cascadia Code', monospace;
 
   /* Radius */
-  --radius-sm: 4px;
-  --radius-md: 8px;
-  --radius-lg: 12px;
-  --radius-xl: 16px;
+  --radius-sm: 8px;
+  --radius-md: 16px;
+  --radius-lg: 24px;
+  --radius-xl: 32px;
 
   /* Transitions */
   --transition: 150ms ease;
@@ -71,9 +74,17 @@ html {
 body {
   font-family: var(--font-sans);
   background-color: var(--bg-base);
+  background-image: 
+    radial-gradient(circle at 15% 50%, rgba(204, 255, 0, 0.08), transparent 30%),
+    radial-gradient(circle at 85% 30%, rgba(99, 102, 241, 0.08), transparent 30%);
+  background-attachment: fixed;
   color: var(--text-primary);
   line-height: 1.6;
   min-height: 100vh;
+}
+
+h1, h2, h3, h4, h5, h6 {
+  font-family: var(--font-display);
 }
 
 a {
@@ -104,6 +115,8 @@ code, pre {
 /* ── Header / Nav ──────────────────────────────────────────────────────── */
 .app-header {
   background: var(--bg-surface);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
   border-bottom: 1px solid var(--bg-border);
   padding: 0 24px;
   position: sticky;
@@ -125,32 +138,35 @@ code, pre {
   align-items: center;
   gap: 10px;
   font-weight: 700;
-  font-size: 1.1rem;
+  font-family: var(--font-display);
+  font-size: 1.2rem;
   color: var(--text-primary);
-  letter-spacing: 0.02em;
+  letter-spacing: -0.02em;
 }
 
 .logo-icon {
   width: 32px;
   height: 32px;
   background: var(--accent);
-  border-radius: 6px;
+  color: #020202;
+  border-radius: 8px;
   display: flex;
   align-items: center;
   justify-content: center;
   font-size: 16px;
+  box-shadow: 0 0 15px rgba(204, 255, 0, 0.4);
 }
 
 .logo-sub {
   font-size: 0.7rem;
-  font-weight: 400;
+  font-weight: 500;
   color: var(--text-muted);
   margin-top: 1px;
 }
 
 .header-badge {
   font-size: 0.72rem;
-  color: var(--text-muted);
+  color: var(--text-primary);
   background: var(--bg-elevated);
   border: 1px solid var(--bg-border);
   padding: 4px 10px;
@@ -161,9 +177,12 @@ code, pre {
 /* ── Cards & Panels ────────────────────────────────────────────────────── */
 .card {
   background: var(--bg-surface);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
   border: 1px solid var(--bg-border);
   border-radius: var(--radius-lg);
   padding: 24px;
+  box-shadow: 0 4px 30px rgba(0, 0, 0, 0.1);
 }
 
 .card-sm {
@@ -171,9 +190,10 @@ code, pre {
 }
 
 .card-title {
-  font-size: 0.8rem;
+  font-family: var(--font-display);
+  font-size: 0.9rem;
   font-weight: 600;
-  letter-spacing: 0.1em;
+  letter-spacing: 0.05em;
   text-transform: uppercase;
   color: var(--text-secondary);
   margin-bottom: 16px;

@@ -5,8 +5,8 @@ export function LimitationDisclaimer() {
       <span>
         <strong>Limitation: </strong>
         CivicShield provides an evidence-based assessment and does not certify the
-        authenticity of a government communication. Always verify notices independently
-        via official government websites (e.g.{" "}
+        authenticity of an official communication. Always verify notices independently
+        via official channels (e.g., your bank's app or{" "}
         <a
           href="https://echallan.parivahan.gov.in/"
           target="_blank"

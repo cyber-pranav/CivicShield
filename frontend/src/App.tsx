@@ -11,7 +11,7 @@ function App() {
             <div className="logo-icon">🛡️</div>
             <div>
               CivicShield
-              <div className="logo-sub">Government Notice & Communication Verifier</div>
+              <div className="logo-sub">Official Notice & Communication Verifier</div>
             </div>
           </div>
           <div className="header-badge">Academic IDT Prototype</div>
@@ -34,7 +34,7 @@ function App() {
         }}
       >
         CivicShield — Academic Design Engineering / IDT Prototype · Not for production use ·
-        For official verification:{" "}
+        Always verify directly through official channels (e.g.,{" "}
         <a
           href="https://echallan.parivahan.gov.in/"
           target="_blank"

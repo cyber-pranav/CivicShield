@@ -117,13 +117,13 @@ export function HomePage() {
             lineHeight: 1.3,
           }}
         >
-          Detect Suspicious Government Communications & Notices
+          Detect Suspicious Official Communications & Notices
         </h1>
         <p style={{ color: "var(--text-secondary)", fontSize: "0.95rem", maxWidth: 680 }}>
           CivicShield analyses URLs, SMS messages, images, and PDF documents for
-          signs of fraudulent government notices — specialising in Indian e-Challan and
-          RTO communications. Results are evidence-based — every finding is explained
-          in plain language.
+          signs of fraudulent official notices — including our flagship e-Challan verification, 
+          alongside banking and delivery scams. Results are evidence-based — every finding is 
+          explained in plain language.
         </p>
       </div>
 
